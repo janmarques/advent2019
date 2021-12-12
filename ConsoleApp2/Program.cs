@@ -40,8 +40,38 @@ namespace ConsoleApp2
 
         public static long Day01_Pt1_GetResult(string[] data)
         {
-            return 0;
+
+            int CalculateFuel(int mass)
+            {
+                return (mass / 3) - 2;
+            }
+
+            return data.Select(int.Parse).Select(CalculateFuel).Sum();
+            //foreach (var item in data)
+            //{
+            //    var mass = int.Parse(item);
+            //}
         }
+
+        public static long Day01_Pt2_GetResult(string[] data)
+        {
+
+            int CalculateFuel(int mass)
+            {
+                var fuel = (mass / 3) - 2;
+                if (fuel <= 0) { return 0; }
+                else { return fuel + CalculateFuel(fuel); }
+            }
+
+            //CalculateFuel(100756);
+
+            return data.Select(int.Parse).Select(CalculateFuel).Sum();
+            //foreach (var item in data)
+            //{
+            //    var mass = int.Parse(item);
+            //}
+        }
+
         public static long Day02_Pt1_GetResult(string[] data)
         {
             return 0;

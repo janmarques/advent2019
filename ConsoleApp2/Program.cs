@@ -458,7 +458,6 @@ namespace ConsoleApp2
             throw new Exception();
         }
 
-         */
 
         public static long Day05_Pt2_GetResult(string[] data)
         {
@@ -637,6 +636,103 @@ namespace ConsoleApp2
 
             throw new Exception();
         }
+        
 
+        class Planet
+        {
+            public string Name { get; set; }
+            public List<Planet> OrbitedBy { get; set; } = new List<Planet>();
+            public Planet Orbits { get; set; }
+        }
+        public static long Day06_Pt1_GetResult(string[] data)
+        {
+            var dct = new Dictionary<string, Planet>();
+            Planet GetOrCreate(string name)
+            {
+                if (!dct.ContainsKey(name))
+                {
+                    dct.Add(name, new Planet { Name = name });
+                }
+                return dct[name];
+            }
+
+            int CountUntilSource(Planet planet)
+            {
+                if (planet.Orbits == null)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 1 + CountUntilSource(planet.Orbits);
+                }
+            }
+
+            foreach (var item in data)
+            {
+                var split = item.Split(')');
+                var planet1 = GetOrCreate(split[0]);
+                var planet2 = GetOrCreate(split[1]);
+                planet1.OrbitedBy.Add(planet2);
+                planet2.Orbits = planet1;
+            }
+
+            var sum = dct.Values.Select(x => CountUntilSource(x) - 1).Sum();
+            return sum;
+        }
+
+        public static long Day06_Pt2_GetResult(string[] data)
+        {
+            var dct = new Dictionary<string, Planet>();
+            Planet GetOrCreate(string name)
+            {
+                if (!dct.ContainsKey(name))
+                {
+                    dct.Add(name, new Planet { Name = name });
+                }
+                return dct[name];
+            }
+
+            var visited = new List<Planet>();
+            (int, bool) CountUntil(Planet you, Planet san)
+            {
+                visited.Add(you);
+                if (you == san)
+                {
+                    return (0, true);
+                }
+
+                foreach (var other in you.OrbitedBy.Union(new[] { you.Orbits }).Except(visited))
+                {
+                    var otherResult = CountUntil(other, san);
+                    if (otherResult.Item2)
+                    {
+                        return (1 + otherResult.Item1, true);
+                    }
+                }
+                return (0, false);
+            }
+
+            foreach (var item in data)
+            {
+                var split = item.Split(')');
+                var planet1 = GetOrCreate(split[0]);
+                var planet2 = GetOrCreate(split[1]);
+                planet1.OrbitedBy.Add(planet2);
+                planet2.Orbits = planet1;
+            }
+
+            var you = dct["YOU"];
+            var santa = dct["SAN"];
+
+            var result = CountUntil(you, santa);
+            return result.Item1 -2 ;
+        }
+         */
+
+        public static long XDay01_Pt1_GetResult(string[] data)
+        {
+            return 0;
+        }
     }
 }

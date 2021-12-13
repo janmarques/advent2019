@@ -74,7 +74,66 @@ namespace ConsoleApp2
 
         public static long Day02_Pt1_GetResult(string[] data)
         {
-            return 0;
+            var operations = data.Single().Split(",").Select(int.Parse).ToArray();
+            operations[1] = 12;
+            operations[2] = 2;
+
+            var stop = 99;
+            var add = 1;
+            var multiply = 2;
+            for (int i = 0; ; i = i + 4)
+            {
+                var opCode = operations[i];
+                if (opCode == stop) { return operations[0]; }
+                var input1 = operations[operations[i + 1]];
+                var input2 = operations[operations[i + 2]];
+                var target = operations[i + 3];
+                var value = opCode == add ? input1 + input2 : input1 * input2;
+                operations[target] = value;
+            }
+
+            throw new Exception();
+        }
+
+        public static long Day02_Pt2_GetResult(string[] data)
+        {
+            var operations = data.Single().Split(",").Select(int.Parse).ToArray();
+
+
+            var stop = 99;
+            var add = 1;
+            for (int noun = 0; noun < 100; noun++)
+            {
+                for (int verb = 0; verb < 100; verb++)
+                {
+                    var clone = operations.ToArray();
+                    clone[1] = noun;
+                    clone[2] = verb;
+
+                    for (int i = 0; ; i = i + 4)
+                    {
+                        var opCode = clone[i];
+                        if (opCode == stop)
+                        {
+                            if (clone[0] == 19690720)
+                            {
+                                return 100 * noun + verb;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        var input1 = clone[clone[i + 1]];
+                        var input2 = clone[clone[i + 2]];
+                        var target = clone[i + 3];
+                        var value = opCode == add ? input1 + input2 : input1 * input2;
+                        clone[target] = value;
+                    }
+                }
+            }
+            throw new Exception();
+            // 682644 too low
         }
     }
 }

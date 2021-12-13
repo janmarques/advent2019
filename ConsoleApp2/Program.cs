@@ -37,7 +37,7 @@ namespace ConsoleApp2
         {
             return 0;
         }
-
+        /*
         public static long Day01_Pt1_GetResult(string[] data)
         {
 
@@ -47,10 +47,6 @@ namespace ConsoleApp2
             }
 
             return data.Select(int.Parse).Select(CalculateFuel).Sum();
-            //foreach (var item in data)
-            //{
-            //    var mass = int.Parse(item);
-            //}
         }
 
         public static long Day01_Pt2_GetResult(string[] data)
@@ -63,13 +59,7 @@ namespace ConsoleApp2
                 else { return fuel + CalculateFuel(fuel); }
             }
 
-            //CalculateFuel(100756);
-
             return data.Select(int.Parse).Select(CalculateFuel).Sum();
-            //foreach (var item in data)
-            //{
-            //    var mass = int.Parse(item);
-            //}
         }
 
         public static long Day02_Pt1_GetResult(string[] data)
@@ -98,7 +88,6 @@ namespace ConsoleApp2
         public static long Day02_Pt2_GetResult(string[] data)
         {
             var operations = data.Single().Split(",").Select(int.Parse).ToArray();
-
 
             var stop = 99;
             var add = 1;
@@ -132,8 +121,161 @@ namespace ConsoleApp2
                     }
                 }
             }
-            throw new Exception();
-            // 682644 too low
+            return -1;
+        }
+
+        public static long Day03_Pt1_GetResult(string[] data)
+        {
+            IEnumerable<(int, int)> GetIntersections(int[,] grid)
+            {
+                for (int i = 0; i < grid.GetLength(0); i++)
+                {
+                    for (int j = 0; j < grid.GetLength(1); j++)
+                    {
+                        if (grid[i, j] > 1) { yield return (i, j); }
+                    }
+                }
+            }
+
+            int CalculateManhattenDistance((int, int) input, int offset) => Math.Abs(input.Item1 - offset) + Math.Abs(input.Item2 - offset);
+            var lines = data.Select(x => x.Split(",")).ToArray();
+            var size = 20000;
+            var offset = 10000;
+            var grid = new int[size, size];
+            foreach (var line in lines)
+            {
+                var previousX = offset;
+                var previousY = offset;
+                foreach (var point in line)
+                {
+                    var direction = point[0];
+                    var distance = int.Parse(new string(point.Skip(1).ToArray()));
+                    var upDown = direction == 'U' ? 1 : direction == 'D' ? -1 : 0;
+                    var rightLeft = direction == 'R' ? 1 : direction == 'L' ? -1 : 0;
+                    if (upDown != 0)
+                    {
+                        Enumerable.Range(1, distance).ToList().ForEach(x => grid[previousX, previousY + x * upDown]++);
+                        previousY += upDown * distance;
+                    }
+                    else
+                    {
+                        Enumerable.Range(1, distance).ToList().ForEach(x => grid[previousX + x * rightLeft, previousY]++);
+                        previousX += rightLeft * distance;
+                    }
+                }
+            }
+
+            var intersections = GetIntersections(grid).Select(x => CalculateManhattenDistance(x, offset)).ToList();
+
+            return intersections.Min();
+        }
+        */
+        public static long Day03_Pt2_GetResult(string[] data)
+        {
+            IEnumerable<(int, int)> GetIntersections(int[,] grid)
+            {
+                for (int i = 0; i < grid.GetLength(0); i++)
+                {
+                    for (int j = 0; j < grid.GetLength(1); j++)
+                    {
+                        if (grid[i, j] > 1) { yield return (i, j); }
+                    }
+                }
+            }
+
+
+
+            var lines = data.Select(x => x.Split(",")).ToArray();
+            var size = 20000;
+            var offset = 10000;
+            var grid = new int[size, size];
+
+
+            long CalculateDistanceToIntersection(string[] line, (int, int) intersection)
+            {
+                var i = 0;
+                var previousX = offset;
+                var previousY = offset;
+                foreach (var point in line)
+                {
+                    var direction = point[0];
+                    var distance = int.Parse(new string(point.Skip(1).ToArray()));
+                    var upDown = direction == 'U' ? 1 : direction == 'D' ? -1 : 0;
+                    var rightLeft = direction == 'R' ? 1 : direction == 'L' ? -1 : 0;
+                    if (upDown != 0)
+                    {
+                        foreach (var x in Enumerable.Range(1, distance))
+                        {
+                            var thisY = previousY + x * upDown;
+                            grid[previousX, thisY]++;
+                            if (intersection == (previousX, thisY))
+                            {
+                                return i + x;
+                            }
+                        };
+                        previousY += upDown * distance;
+                        i += distance;
+                    }
+                    else
+                    {
+                        foreach (var x in Enumerable.Range(1, distance))
+                        {
+
+                            var thisX = previousX + x * rightLeft;
+                            grid[thisX, previousY]++;
+                            
+                            if (intersection == (thisX, previousY))
+                            {
+                                return i + x;
+                            }
+                        }
+                        previousX += rightLeft * distance;
+                        i += distance;
+                    }
+                }
+
+                return int.MaxValue;
+            }
+
+            foreach (var line in lines)
+            {
+                var previousX = offset;
+                var previousY = offset;
+                foreach (var point in line)
+                {
+                    var direction = point[0];
+                    var distance = int.Parse(new string(point.Skip(1).ToArray()));
+                    var upDown = direction == 'U' ? 1 : direction == 'D' ? -1 : 0;
+                    var rightLeft = direction == 'R' ? 1 : direction == 'L' ? -1 : 0;
+                    if (upDown != 0)
+                    {
+                        Enumerable.Range(1, distance).ToList().ForEach(x => grid[previousX, previousY + x * upDown]++);
+                        previousY += upDown * distance;
+                    }
+                    else
+                    {
+                        Enumerable.Range(1, distance).ToList().ForEach(x => grid[previousX + x * rightLeft, previousY]++);
+                        previousX += rightLeft * distance;
+                    }
+                }
+            }
+
+            var intersections = GetIntersections(grid).ToList();
+
+            var minSteps = long.MaxValue;
+            foreach (var intersection in intersections)
+            {
+                var sum = CalculateDistanceToIntersection(lines[0], intersection) + CalculateDistanceToIntersection(lines[1], intersection);
+                if(sum == 12934)
+                {
+                    Console.WriteLine(intersection);
+                }
+                minSteps = Math.Min(minSteps, sum);
+            }
+
+            return minSteps;
+
+            // 20718 too high
         }
     }
 }

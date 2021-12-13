@@ -169,7 +169,7 @@ namespace ConsoleApp2
 
             return intersections.Min();
         }
-        */
+       
         public static long Day03_Pt2_GetResult(string[] data)
         {
             IEnumerable<(int, int)> GetIntersections(int[,] grid)
@@ -276,6 +276,70 @@ namespace ConsoleApp2
             return minSteps;
 
             // 20718 too high
+        }
+
+         */
+
+        public static long Day04_Pt1_GetResult(string[] data)
+        {
+            var range = data.Single().Split("-").Select(int.Parse).ToArray();
+            var min = range[0];
+            var max = range[1];
+
+            var count = 0;
+            for (int i = min; i <= max; i++)
+            {
+                var str = i.ToString();
+                var adjecentOk = false;
+                var increasingOk = true;
+                for (int j = 0; j < 5; j++)
+                {
+                    if (str[j] == str[j + 1])
+                    {
+                        adjecentOk = true;
+                    }
+                    if (int.Parse(str[j].ToString()) > int.Parse(str[j + 1].ToString()))
+                    {
+                        increasingOk = false; break;
+                    }
+                }
+
+                if (increasingOk && adjecentOk)
+                {
+                    count++;
+                }
+            }
+
+            return count; // 909 too low
+        }
+
+        public static long Day04_Pt2_GetResult(string[] data)
+        {
+            var range = data.Single().Split("-").Select(int.Parse).ToArray();
+            var min = range[0];
+            var max = range[1];
+
+            var count = 0;
+            for (int i = min; i <= max; i++)
+            {
+                var str = i.ToString();
+                var adjecentOk = Enumerable.Range(0,10).Any(x => str.Contains($"{x}{x}") && !str.Contains($"{x}{x}{x}"));
+                var increasingOk = true;
+                for (int j = 0; j < 5; j++)
+                {
+                    if (int.Parse(str[j].ToString()) > int.Parse(str[j + 1].ToString()))
+                    {
+                        increasingOk = false; break;
+                    }
+                }
+
+                if (increasingOk && adjecentOk)
+                {
+                    count++;
+                }
+            }
+
+            return count; // 1054 too low
         }
     }
 }

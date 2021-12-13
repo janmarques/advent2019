@@ -278,7 +278,7 @@ namespace ConsoleApp2
             // 20718 too high
         }
 
-         */
+        
 
         public static long Day04_Pt1_GetResult(string[] data)
         {
@@ -341,5 +341,302 @@ namespace ConsoleApp2
 
             return count; // 1054 too low
         }
+
+        
+
+        public static long Day05_Pt1_GetResult(string[] data)
+        {
+            (bool? parameterMode1, bool? parameterMode2, bool? parameterMode3, int opCode) GetOpcode(int input)
+            {
+                var inputString = input.ToString();
+                var opCode = int.Parse(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = false;
+                var parameterMode2 = false;
+                var parameterMode3 = false;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = inputString[0] == '1';
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = inputString[0] == '1';
+                    parameterMode1 = inputString[1] == '1';
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = inputString[0] == '1';
+                    parameterMode2 = inputString[1] == '1';
+                    parameterMode1 = inputString[2] == '1';
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+            var operations = data.Single().Split(",").Select(int.Parse).ToArray();
+
+            const int stop = 99;
+            const int add = 1;
+            const int multiply = 2;
+            const int input = 3;
+            const int output = 4;
+
+            var tmpInput = 1;
+            var tmpOutput = int.MinValue;
+            for (int i = 0; ;)
+            {
+                var opCode = GetOpcode(operations[i]);
+                switch (opCode.opCode)
+                {
+                    case stop:
+                        {
+                            //return operations[0];
+                            return tmpOutput;
+                        }
+                    case add:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            var value = param1 + param2;
+                            if (opCode.parameterMode3.Value)
+                            {
+                                operations[i + 3] = value;
+                            }
+                            else
+                            {
+                                operations[operations[i + 3]] = value;
+                            }
+                            i += 4;
+                        }
+                        break;
+                    case multiply:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            var value = param1 * param2;
+                            if (opCode.parameterMode3.Value)
+                            {
+                                operations[i + 3] = value;
+                            }
+                            else
+                            {
+                                operations[operations[i + 3]] = value;
+                            }
+                            i += 4;
+                        }
+                        break;
+                    case input:
+                        {
+                            if (opCode.parameterMode1.Value)
+                            {
+                                operations[i + 1] = tmpInput;
+                            }
+                            else
+                            {
+                                operations[operations[i + 1]] = tmpInput;
+                            }
+                            i += 2;
+                        }
+                        break;
+                    case output:
+                        {
+                            if (opCode.parameterMode1.Value)
+                            {
+                                tmpOutput = operations[i + 1];
+                            }
+                            else
+                            {
+                                tmpOutput = operations[operations[i + 1]];
+                            }
+                            i += 2;
+                        }
+                        break;
+                    default:
+                        {
+                            throw new Exception();
+                        }
+                }
+            }
+
+            throw new Exception();
+        }
+
+         */
+
+        public static long Day05_Pt2_GetResult(string[] data)
+        {
+            (bool? parameterMode1, bool? parameterMode2, bool? parameterMode3, int opCode) GetOpcode(int input)
+            {
+                var inputString = input.ToString();
+                var opCode = int.Parse(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = false;
+                var parameterMode2 = false;
+                var parameterMode3 = false;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = inputString[0] == '1';
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = inputString[0] == '1';
+                    parameterMode1 = inputString[1] == '1';
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = inputString[0] == '1';
+                    parameterMode2 = inputString[1] == '1';
+                    parameterMode1 = inputString[2] == '1';
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+            var operations = data.Single().Split(",").Select(int.Parse).ToArray();
+
+            const int stop = 99;
+            const int add = 1;
+            const int multiply = 2;
+            const int input = 3;
+            const int output = 4;
+            const int jumpIfTrue = 5;
+            const int jumpIfFalse = 6;
+            const int lessThan = 7;
+            const int equals = 8;
+
+            var tmpInput = 5;
+            var tmpOutput = int.MinValue;
+            for (int i = 0; ;)
+            {
+                var opCode = GetOpcode(operations[i]);
+                switch (opCode.opCode)
+                {
+                    case stop:
+                        {
+                            //return operations[0];
+                            return tmpOutput;
+                        }
+                    case add:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            var value = param1 + param2;
+                            if (opCode.parameterMode3.Value)
+                            {
+                                operations[i + 3] = value;
+                            }
+                            else
+                            {
+                                operations[operations[i + 3]] = value;
+                            }
+                            i += 4;
+                        }
+                        break;
+                    case multiply:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            var value = param1 * param2;
+                            if (opCode.parameterMode3.Value)
+                            {
+                                operations[i + 3] = value;
+                            }
+                            else
+                            {
+                                operations[operations[i + 3]] = value;
+                            }
+                            i += 4;
+                        }
+                        break;
+                    case input:
+                        {
+                            if (opCode.parameterMode1.Value)
+                            {
+                                operations[i + 1] = tmpInput;
+                            }
+                            else
+                            {
+                                operations[operations[i + 1]] = tmpInput;
+                            }
+                            i += 2;
+                        }
+                        break;
+                    case output:
+                        {
+                            if (opCode.parameterMode1.Value)
+                            {
+                                tmpOutput = operations[i + 1];
+                            }
+                            else
+                            {
+                                tmpOutput = operations[operations[i + 1]];
+                            }
+                            i += 2;
+                        }
+                        break;
+                    case jumpIfTrue:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            if (param1 != 0)
+                            {
+                                i = param2;
+                            }
+                            else
+                            {
+                                i += 3;
+                            }
+                        }
+                        break;
+                    case jumpIfFalse:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            if (param1 == 0)
+                            {
+                                i = param2;
+                            }
+                            else
+                            {
+                                i += 3;
+                            }
+                        }
+                        break;
+                    case lessThan:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            var value = param1 < param2 ? 1 : 0;
+                            if (opCode.parameterMode3.Value)
+                            {
+                                operations[i + 3] = value;
+                            }
+                            else
+                            {
+                                operations[operations[i + 3]] = value;
+                            }
+                            i += 4;
+                        }
+                        break;
+                    case equals:
+                        {
+                            var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                            var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                            var value = param1 == param2 ? 1 : 0;
+                            if (opCode.parameterMode3.Value)
+                            {
+                                operations[i + 3] = value;
+                            }
+                            else
+                            {
+                                operations[operations[i + 3]] = value;
+                            }
+                            i += 4;
+                        }
+                        break;
+                    default:
+                        {
+                            throw new Exception();
+                        }
+                }
+            }
+
+            throw new Exception();
+        }
+
     }
 }

@@ -728,9 +728,8 @@ namespace ConsoleApp2
             var result = CountUntil(you, santa);
             return result.Item1 -2 ;
         }
-         */
 
-        public static long Day07_Pt2_GetResult(string[] data)
+        public static long Day07_Pt1_GetResult(string[] data)
         {
             (bool? parameterMode1, bool? parameterMode2, bool? parameterMode3, int opCode) GetOpcode(int input)
             {
@@ -932,5 +931,243 @@ namespace ConsoleApp2
 
             return outputs.Max();
         }
+         */
+
+        class StateMachine
+        {
+            (bool? parameterMode1, bool? parameterMode2, bool? parameterMode3, int opCode) GetOpcode(int input)
+            {
+                var inputString = input.ToString();
+                var opCode = int.Parse(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = false;
+                var parameterMode2 = false;
+                var parameterMode3 = false;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = inputString[0] == '1';
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = inputString[0] == '1';
+                    parameterMode1 = inputString[1] == '1';
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = inputString[0] == '1';
+                    parameterMode2 = inputString[1] == '1';
+                    parameterMode1 = inputString[2] == '1';
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+
+            const int stop = 99;
+            const int add = 1;
+            const int multiply = 2;
+            const int input = 3;
+            const int output = 4;
+            const int jumpIfTrue = 5;
+            const int jumpIfFalse = 6;
+            const int lessThan = 7;
+            const int equals = 8;
+
+            public int inputBuffer { get; set; }
+            public int outputBuffer { get; set; }
+            public int phase { get; set; }
+            public int i { get; set; }
+            public int[] operations { get; set; }
+            public bool first { get; set; } = true;
+            public int GetNext()
+            {
+                while (true)
+                {
+                    var opCode = GetOpcode(operations[i]);
+                    switch (opCode.opCode)
+                    {
+                        case stop:
+                            {
+                                //return operations[0];
+                                //throw new InvalidOperationException();
+                                return int.MinValue;
+                            }
+                        case add:
+                            {
+                                var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                                var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                                var value = param1 + param2;
+                                if (opCode.parameterMode3.Value)
+                                {
+                                    operations[i + 3] = value;
+                                }
+                                else
+                                {
+                                    operations[operations[i + 3]] = value;
+                                }
+                                i += 4;
+                            }
+                            break;
+                        case multiply:
+                            {
+                                var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                                var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                                var value = param1 * param2;
+                                if (opCode.parameterMode3.Value)
+                                {
+                                    operations[i + 3] = value;
+                                }
+                                else
+                                {
+                                    operations[operations[i + 3]] = value;
+                                }
+                                i += 4;
+                            }
+                            break;
+                        case input:
+                            {
+                                var inputtt = first ? phase : inputBuffer;
+                                if (first) { first = false; }
+                                if (opCode.parameterMode1.Value)
+                                {
+                                    operations[i + 1] = inputtt;
+                                }
+                                else
+                                {
+                                    operations[operations[i + 1]] = inputtt;
+                                }
+                                i += 2;
+                            }
+                            break;
+                        case output:
+                            {
+                                if (opCode.parameterMode1.Value)
+                                {
+                                    outputBuffer = operations[i + 1];
+                                }
+                                else
+                                {
+                                    outputBuffer = operations[operations[i + 1]];
+                                }
+                                i += 2;
+                                return outputBuffer;
+                            }
+                            break;
+                        case jumpIfTrue:
+                            {
+                                var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                                var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                                if (param1 != 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case jumpIfFalse:
+                            {
+                                var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                                var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                                if (param1 == 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case lessThan:
+                            {
+                                var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                                var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                                var value = param1 < param2 ? 1 : 0;
+                                if (opCode.parameterMode3.Value)
+                                {
+                                    operations[i + 3] = value;
+                                }
+                                else
+                                {
+                                    operations[operations[i + 3]] = value;
+                                }
+                                i += 4;
+                            }
+                            break;
+                        case equals:
+                            {
+                                var param1 = opCode.parameterMode1.Value ? operations[i + 1] : operations[operations[i + 1]];
+                                var param2 = opCode.parameterMode2.Value ? operations[i + 2] : operations[operations[i + 2]];
+                                var value = param1 == param2 ? 1 : 0;
+                                if (opCode.parameterMode3.Value)
+                                {
+                                    operations[i + 3] = value;
+                                }
+                                else
+                                {
+                                    operations[operations[i + 3]] = value;
+                                }
+                                i += 4;
+                            }
+                            break;
+                        default:
+                            {
+                                throw new Exception();
+                            }
+                    }
+                }
+            }
+        }
+
+        public static long Day07_Pt2_GetResult(string[] data)
+        {
+            IEnumerable<IEnumerable<int>> GetPermutations(IEnumerable<int> list, int length)
+            {
+                if (length == 1) return list.Select(t => new int[] { t });
+
+                return GetPermutations(list, length - 1).SelectMany(t => list.Where(e => !t.Contains(e)), (t1, t2) => t1.Concat(new int[] { t2 }));
+            }
+
+            var operations = data.Single().Split(",").Select(int.Parse).ToArray();
+
+            var permutations = GetPermutations(Enumerable.Range(5, 5), 5);
+            //var permutations = new int[][] { new int[] { 9, 8, 7, 6, 5 } };
+            var outputs = new List<int>();
+            var ampCount = 5;
+            foreach (var permutation in permutations)
+            {
+                var amps = permutation.Select(x => new StateMachine { inputBuffer = 0, outputBuffer = 0, phase = x, operations = operations.ToArray() }).ToArray();
+                var outputValue = 0;
+                while (true)
+                {
+                    for (int i = 0; ; i++)
+                    {
+                        var amp = amps[i % ampCount];
+                        amp.inputBuffer = outputValue;
+                        var returnValue = amp.GetNext();
+                        if (returnValue == int.MinValue)
+                        {
+                            outputs.Add(amp.inputBuffer);
+                            goto label;
+                            //return amp.inputBuffer;
+                        }
+                        else
+                        {
+                            outputValue = returnValue;
+                        }
+                    }
+
+                    if (outputValue == 139629729)
+                    {
+
+                    }
+                }
+            label:
+                var bla = 0;
+            }
+
+            return outputs.Max();
+        }
+
     }
 }

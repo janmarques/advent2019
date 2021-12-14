@@ -931,7 +931,6 @@ namespace ConsoleApp2
 
             return outputs.Max();
         }
-         */
 
         class StateMachine
         {
@@ -1168,6 +1167,87 @@ namespace ConsoleApp2
 
             return outputs.Max();
         }
+        public static long Day08_Pt1_GetResult(string[] data)
+        {
+            var width = int.Parse(data[0].Split("x")[0].ToString());
+            var height = int.Parse(data[0].Split("x")[1].ToString());
+            var numbers = data[1].Select(x => int.Parse(x.ToString())).ToArray();
+            var layer = new List<List<int>>();
+            var layers = new List<List<List<int>>>();
+            for (int i = 0; i < numbers.Count(); i += width)
+            {
+                if (i != 0 && i % (height * width) == 0)
+                {
+                    layers.Add(layer);
+                    layer = new List<List<int>>();
+                }
+                layer.Add(numbers.Skip(i).Take(width).ToList());
 
+            }
+            layers.Add(layer);
+
+            var leastZeroes = layers.OrderBy(x => x.SelectMany(y => y).Count(y => y == 0)).First();
+            var values = leastZeroes.SelectMany(x => x);
+            return values.Count(x => x == 1) * values.Count(x => x == 2);
+        }
+         */
+
+        public static long Day08_Pt2_GetResult(string[] data)
+        {
+            void PrintGrid(int[][] grid)
+            {
+                string Value(int x) => x == 1 ? "#" : " ";
+
+                for (int i = 0; i < grid.Length; i++)
+                {
+                    for (int j = 0; j < grid[i].Length; j++)
+                    {
+                        Console.Write($"{Value(grid[i][j])}");
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+                Console.WriteLine();
+
+            }
+
+            var width = int.Parse(data[0].Split("x")[0].ToString());
+            var height = int.Parse(data[0].Split("x")[1].ToString());
+            var numbers = data[1].Select(x => int.Parse(x.ToString())).ToArray();
+            var layerX = new List<List<int>>();
+            var layers = new List<List<List<int>>>();
+            for (int i = 0; i < numbers.Count(); i += width)
+            {
+                if (i != 0 && i % (height * width) == 0)
+                {
+                    layers.Add(layerX);
+                    layerX = new List<List<int>>();
+                }
+                layerX.Add(numbers.Skip(i).Take(width).ToList());
+
+            }
+            layers.Add(layerX);
+            layers.Reverse();
+            var resultingLayer = Enumerable.Range(0, height).Select(x => Enumerable.Range(0, width).Select(x => 2).ToArray()).ToArray();
+            foreach (var layer in layers)
+            {
+                for (int i = 0; i < height; i++)
+                {
+                    for (int j = 0; j < width; j++)
+                    {
+                        var me = layer[i][j];
+                        //var other = resultingLayer[i][j];
+                        if (me != 2)
+                        {
+                            resultingLayer[i][j] = me;
+                        }
+                    }
+                }
+            }
+
+            PrintGrid(resultingLayer);
+
+            return -1;
+        }
     }
 }

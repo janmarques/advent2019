@@ -1487,7 +1487,6 @@ namespace ConsoleApp2
             var max = cells.Max(x => x.VisibleOthers);
             return max;
         }
-         */
 
         class Cell
         {
@@ -1539,6 +1538,302 @@ namespace ConsoleApp2
             laserCell.SetCounts(cells);
             var target = laserCell.GetCell200();
             return target.X * 100+target.Y;
+        }
+         */
+
+        enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
+        enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
+        class StateMachine
+        {
+            private ParameterMode GetParameterMode(char v) => (ParameterMode)ToInt(v);
+            (ParameterMode parameterMode1, ParameterMode parameterMode2, ParameterMode parameterMode3, OpCode opCode) GetOpcode(long input)
+            {
+                var inputString = input.ToString();
+                var opCode = (OpCode)ToInt(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = ParameterMode.Position;
+                var parameterMode2 = ParameterMode.Position;
+                var parameterMode3 = ParameterMode.Position;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = GetParameterMode(inputString[0]);
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = GetParameterMode(inputString[0]);
+                    parameterMode1 = GetParameterMode(inputString[1]);
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = GetParameterMode(inputString[0]);
+                    parameterMode2 = GetParameterMode(inputString[1]);
+                    parameterMode1 = GetParameterMode(inputString[2]);
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+
+            public long inputBuffer { get; set; }
+            public List<long> outputBuffer { get; set; } = new List<long>();
+            public long i { get; set; }
+            public long relativeBase { get; set; }
+            public Dictionary<long, long> operations { get; set; }
+
+            long GetOrDefault(long address)
+            {
+                if (operations.TryGetValue(address, out var result))
+                {
+                    return result;
+                }
+                return 0;
+            }
+            long Get(ParameterMode mode, long address)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: return GetOrDefault(GetOrDefault(address));
+                    case ParameterMode.Value: return GetOrDefault(address);
+                    case ParameterMode.Relative: return GetOrDefault(relativeBase + GetOrDefault(address));
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            void Set(ParameterMode mode, long address, long value)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: operations[GetOrDefault(address)] = value; break;
+                    case ParameterMode.Value: operations[address] = value; break;
+                    case ParameterMode.Relative: operations[relativeBase + GetOrDefault(address)] = value; break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+            public long Execute()
+            {
+                while (true)
+                {
+                    var opCode = GetOpcode(operations[i]);
+                    switch (opCode.opCode)
+                    {
+                        case OpCode.Stop:
+                            {
+                                //return operations[0];
+                                //throw new InvalidOperationException();
+                                return long.MinValue;
+                            }
+                        case OpCode.Add:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 + param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Multiply:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 * param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Input:
+                            {
+                                Set(opCode.parameterMode1, i + 1, inputBuffer);
+                                i += 2;
+                            }
+                            break;
+                        case OpCode.Output:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                outputBuffer.Add(param1);
+                                i += 2;
+                                return param1;
+                            }
+                            break;
+                        case OpCode.JumpIfTrue:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 != 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.JumpIfFalse:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 == 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.LessThan:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 < param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Equals:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 == param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.AdjustRelativeBase:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                relativeBase += param1;
+                                i += 2;
+                            }
+                            break;
+                        default:
+                            {
+                                throw new Exception();
+                            }
+                    }
+                }
+            }
+        }
+
+        class Cell
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+            public bool? Black { get; set; }
+            public void Paint(bool black)
+            {
+                Black = black;
+            }
+        }
+
+        enum Direction { N, E, S, W }
+        public static long Day11_Pt1_GetResult(string[] data)
+        {
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+            var cells = new Dictionary<(int x, int y), Cell>();
+            Cell GetOrCreate(int x, int y)
+            {
+                var key = (x, y);
+                if (!cells.ContainsKey(key))
+                {
+                    cells[key] = new Cell() { X = x, Y = y };
+                }
+                return cells[key];
+            }
+
+            (int x, int y) MoveInDirection(int x, int y, Direction direction)
+            {
+                switch (direction)
+                {
+                    case Direction.N: return (x, y - 1);
+                    case Direction.E: return (x + 1, y);
+                    case Direction.S: return (x, y + 1);
+                    case Direction.W: return (x - 1, y);
+                    default: throw new Exception();
+                }
+            }
+
+            Direction Rotate(Direction oldDirection, bool left)
+            {
+                if (left)
+                {
+                    switch (oldDirection)
+                    {
+                        case Direction.N: return Direction.W;
+                        case Direction.E: return Direction.N;
+                        case Direction.S: return Direction.E;
+                        case Direction.W: return Direction.S;
+                    }
+                }
+                else
+                {
+                    switch (oldDirection)
+                    {
+                        case Direction.N: return Direction.E;
+                        case Direction.E: return Direction.S;
+                        case Direction.S: return Direction.W;
+                        case Direction.W: return Direction.N;
+                    }
+                }
+                throw new Exception();
+            }
+
+            void PrintGrid(List<Cell> whiteCells)
+            {
+                var minX = whiteCells.Min(x => x.X);
+                var maxX = whiteCells.Max(x => x.X);
+                var minY = whiteCells.Min(x => x.Y);
+                var maxY = whiteCells.Max(x => x.Y);
+
+                for (int y = minY; y <= maxY; y++)
+                {
+                    for (int x = minY; x <= maxX; x++)
+                    {
+                        if (whiteCells.Any(z => z.X == x && z.Y == y))
+                        {
+                            Console.Write("X");
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+            }
+
+            var currentCell = GetOrCreate(0, 0);
+            currentCell.Black = false;
+
+            var machine = new StateMachine { inputBuffer = 0, operations = operations };
+            var stopOutput = long.MinValue;
+            var direction = Direction.N;
+            while (true)
+            {
+                machine.inputBuffer = currentCell.Black.HasValue ? (currentCell.Black.Value ? 0 : 1) : 0;
+                var outputColor = machine.Execute();
+                if (outputColor == stopOutput) { break; }
+                var outputDirectionChange = machine.Execute();
+                var isMoveLeft = outputDirectionChange == 0;
+
+                currentCell.Black = outputColor == 0;
+                direction = Rotate(direction, isMoveLeft);
+                //direction = newDirection;
+                //Console.WriteLine(newDirection);
+                var newDestination = MoveInDirection(currentCell.X, currentCell.Y, direction);
+                currentCell = GetOrCreate(newDestination.x, newDestination.y);
+            }
+
+            var whiteCells = cells.Select(x => x.Value).Where(x => x.Black.HasValue && !x.Black.Value).ToList();
+            PrintGrid(whiteCells);
+            var count = cells.Count(x => x.Value.Black.HasValue);
+            return count; // 2721 too high
+
+
         }
     }
 }

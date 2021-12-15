@@ -1465,28 +1465,8 @@ namespace ConsoleApp2
 
             return output;
         }
-         */
 
-        class Cell
-        {
-            public int X { get; set; }
-            public int Y { get; set; }
-            public int VisibleOthers { get; set; }
-            public bool IsAstroid { get; set; }
-
-            double CalculateAngle(Cell one, Cell two)
-            {
-                return Math.Atan2(one.X - two.X, one.Y - two.Y);
-                //return (double)(one.X - two.X) / (double)(one.Y - two.Y);
-            }
-            public void SetCounts(IEnumerable<Cell> cells)
-            {
-                var angles = cells.Where(x => x != this).Select(x => CalculateAngle(x, this)).ToList();
-                var angles2 = cells.Where(x => x != this).Select(x => CalculateAngle(x, this)).Distinct().ToList();
-                VisibleOthers = cells.Where(x => x != this).Select(x => CalculateAngle(x, this)).Distinct().Count();
-            }
-        }
-        public static long Day10_Pt1_GetResult(string[] data)
+                public static long Day10_Pt1_GetResult(string[] data)
         {
             var cells = new List<Cell>();
             for (int j = 0; j < data.Length; j++)
@@ -1506,6 +1486,59 @@ namespace ConsoleApp2
 
             var max = cells.Max(x => x.VisibleOthers);
             return max;
+        }
+         */
+
+        class Cell
+        {
+            private Dictionary<double, List<Cell>> VisibleAngles;
+
+            public int X { get; set; }
+            public int Y { get; set; }
+            public int VisibleOthers { get; set; }
+            public bool IsAstroid { get; set; }
+
+            double CalculateAngle(Cell one, Cell two)
+            {
+                return ((Math.Atan2(one.X - two.X, one.Y - two.Y) * (180 / Math.PI)) + 360) % 360;
+                //return (double)(one.X - two.X) / (double)(one.Y - two.Y);
+            }
+
+            int CalculateManhattenDistance(Cell one, Cell two) => Math.Abs(one.X - two.X) + Math.Abs(one.Y - two.Y);
+            public void SetCounts(IEnumerable<Cell> cells)
+            {
+                VisibleAngles = cells.Where(x => x != this)
+                    .Select(x => (cell: x, angle: CalculateAngle(this, x)))
+                    .Select(x => (cell: x.cell, angle: x.angle == 0 ? 360 : x.angle))
+                    .GroupBy(x => x.angle).OrderByDescending(x => x.Key)
+                    .ToDictionary(x => x.Key, x => x.Select(y => y.cell).OrderBy(y => CalculateManhattenDistance(this, y)).ToList());
+            }
+
+            public Cell GetCell200() => VisibleAngles.ElementAt(200 - 1).Value.First();
+        }
+
+
+        public static long Day10_Pt2_GetResult(string[] data)
+        {
+            var cells = new List<Cell>();
+            for (int j = 0; j < data.Length; j++)
+            {
+                for (int i = 0; i < data[0].Length; i++)
+                {
+                    var isAstroid = data[j][i] == '#';
+                    if (isAstroid)
+                    {
+                        var cell = new Cell() { X = i, Y = j, IsAstroid = true };
+                        cells.Add(cell);
+                    }
+                }
+            }
+
+            //sample: 210 visible: 11,13. Real: 314 visible: 27,19
+            var laserCell = cells.Count > 300 ? cells.Single(x => x.X == 27 && x.Y == 19) : cells.Single(x => x.X == 11 && x.Y == 13);
+            laserCell.SetCounts(cells);
+            var target = laserCell.GetCell200();
+            return target.X * 100+target.Y;
         }
     }
 }

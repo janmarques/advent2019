@@ -1539,7 +1539,6 @@ namespace ConsoleApp2
             var target = laserCell.GetCell200();
             return target.X * 100+target.Y;
         }
-         */
 
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
         enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
@@ -1834,6 +1833,108 @@ namespace ConsoleApp2
             return count; // 2721 too high
 
 
+        }
+
+         */
+
+        class Coordinate
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+            public int Z { get; set; }
+            public override string ToString() => $"{X,3},{Y,3},{Z,3}";
+
+            public Coordinate Clone() => new Coordinate { X = X, Y = Y, Z = Z };
+            int Abs(int x) => Math.Abs(x);
+            public int Sum() => Abs(X)+ Abs(Y) + Abs(Z);
+        }
+        class Moon
+        {
+            public Coordinate Position { get; set; }
+            public Coordinate Velocity { get; set; }
+            public int Product() => Position.Sum() * Velocity.Sum();
+
+            //public Coordinate NewPosition { get; set; }
+            //public Coordinate NewVelocity { get; set; }
+            public override string ToString() => $"P:{Position} V:{Velocity}";
+        }
+
+        public static long Day12_Pt1_GetResult(string[] data)
+        {
+            var moons = data
+                .Select(x => x.Replace("<", "").Replace(">", ""))
+                .Select(x => x.Split(", ")).Select(x => (X: x[0].Split("=")[1], Y: x[1].Split("=")[1], Z: x[2].Split("=")[1]))
+                .Select(x => (X: ToInt(x.X), Y: ToInt(x.Y), Z: ToInt(x.Z)))
+                .Select(x => new Moon { Position = new Coordinate { X = x.X, Y = x.Y, Z = x.Z }, Velocity = new Coordinate() })
+                .ToList();
+
+            Console.WriteLine($"Step 0");
+            moons.ForEach(x => Console.WriteLine(x));
+            //moons.ForEach(x =>
+            //{
+            //    x.NewVelocity = x.Velocity.Clone();
+            //    x.NewPosition = x.Position.Clone();
+            //});
+            for (int i = 0; i < 1000; i++)
+            {
+
+                foreach (var moon in moons)
+                {
+                    foreach (var otherMoon in moons.Where(x => x != moon))
+                    {
+                        var xIncrease = moon.Position.X == otherMoon.Position.X ? (bool?)null : moon.Position.X < otherMoon.Position.X;
+                        var yIncrease = moon.Position.Y == otherMoon.Position.Y ? (bool?)null : moon.Position.Y < otherMoon.Position.Y;
+                        var zIncrease = moon.Position.Z == otherMoon.Position.Z ? (bool?)null : moon.Position.Z < otherMoon.Position.Z;
+                        if (xIncrease.HasValue)
+                        {
+                            if (xIncrease.Value)
+                            {
+                                moon.Velocity.X++;
+                            }
+                            else
+                            {
+                                moon.Velocity.X--;
+                            }
+                        }
+                        if (yIncrease.HasValue)
+                        {
+                            if (yIncrease.Value)
+                            {
+                                moon.Velocity.Y++;
+                            }
+                            else
+                            {
+                                moon.Velocity.Y--;
+                            }
+                        }
+                        if (zIncrease.HasValue)
+                        {
+                            if (zIncrease.Value)
+                            {
+                                moon.Velocity.Z++;
+                            }
+                            else
+                            {
+                                moon.Velocity.Z--;
+                            }
+                        }
+                    }
+                }
+
+                foreach (var moon in moons)
+                {
+                    moon.Position.X += moon.Velocity.X;
+                    moon.Position.Y += moon.Velocity.Y;
+                    moon.Position.Z += moon.Velocity.Z;
+                }
+
+                //Console.WriteLine($"Step {i + 1}");
+            }
+                moons.ForEach(x => Console.WriteLine(x));
+
+            var energy = moons.Sum(x => x.Product());
+
+            return energy; // 14645 too high
         }
     }
 }

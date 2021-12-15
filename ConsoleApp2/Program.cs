@@ -1444,5 +1444,27 @@ namespace ConsoleApp2
 
             return output;
         }
+
+        public static long Day09_Pt2_GetResult(string[] data)
+        {
+            IEnumerable<IEnumerable<int>> GetPermutations(IEnumerable<int> list, int length)
+            {
+                if (length == 1) return list.Select(t => new int[] { t });
+
+                return GetPermutations(list, length - 1).SelectMany(t => list.Where(e => !t.Contains(e)), (t1, t2) => t1.Concat(new int[] { t2 }));
+            }
+
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+            var machine = new StateMachine { inputBuffer = 2 , operations = operations };
+            var output = machine.Execute();
+
+            return output;
+        }
     }
 }

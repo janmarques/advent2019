@@ -28,7 +28,8 @@ namespace ConsoleApp2
 
             Console.Read();
         }
-
+        static int ToInt(char c) => ToInt(c.ToString());
+        static int ToInt(string c) => int.Parse(c);
         public static long XDay01_Pt1_GetResult(string[] data)
         {
             return 0;
@@ -1190,7 +1191,6 @@ namespace ConsoleApp2
             var values = leastZeroes.SelectMany(x => x);
             return values.Count(x => x == 1) * values.Count(x => x == 2);
         }
-         */
 
         public static long Day08_Pt2_GetResult(string[] data)
         {
@@ -1248,6 +1248,201 @@ namespace ConsoleApp2
             PrintGrid(resultingLayer);
 
             return -1;
+        }
+         */
+
+
+        enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
+        enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
+        class StateMachine
+        {
+            private ParameterMode GetParameterMode(char v) => (ParameterMode)ToInt(v);
+            (ParameterMode parameterMode1, ParameterMode parameterMode2, ParameterMode parameterMode3, OpCode opCode) GetOpcode(long input)
+            {
+                var inputString = input.ToString();
+                var opCode = (OpCode)ToInt(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = ParameterMode.Position;
+                var parameterMode2 = ParameterMode.Position;
+                var parameterMode3 = ParameterMode.Position;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = GetParameterMode(inputString[0]);
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = GetParameterMode(inputString[0]);
+                    parameterMode1 = GetParameterMode(inputString[1]);
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = GetParameterMode(inputString[0]);
+                    parameterMode2 = GetParameterMode(inputString[1]);
+                    parameterMode1 = GetParameterMode(inputString[2]);
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+
+            public long inputBuffer { get; set; }
+            public List<long> outputBuffer { get; set; } = new List<long>();
+            public long i { get; set; }
+            public long relativeBase { get; set; }
+            public Dictionary<long, long> operations { get; set; }
+
+            long GetOrDefault(long address)
+            {
+                if (operations.TryGetValue(address, out var result))
+                {
+                    return result;
+                }
+                return 0;
+            }
+            long Get(ParameterMode mode, long address)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: return GetOrDefault(GetOrDefault(address));
+                    case ParameterMode.Value: return GetOrDefault(address);
+                    case ParameterMode.Relative: return GetOrDefault(relativeBase + GetOrDefault(address));
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            void Set(ParameterMode mode, long address, long value)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: operations[GetOrDefault(address)] = value; break;
+                    case ParameterMode.Value: operations[address] = value; break;
+                    case ParameterMode.Relative: operations[relativeBase + GetOrDefault(address)] = value; break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+            public int Execute()
+            {
+                while (true)
+                {
+                    var opCode = GetOpcode(operations[i]);
+                    switch (opCode.opCode)
+                    {
+                        case OpCode.Stop:
+                            {
+                                //return operations[0];
+                                //throw new InvalidOperationException();
+                                return int.MinValue;
+                            }
+                        case OpCode.Add:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 + param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Multiply:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 * param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Input:
+                            {
+                                Set(opCode.parameterMode1, i + 1, inputBuffer);
+                                i += 2;
+                            }
+                            break;
+                        case OpCode.Output:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                outputBuffer.Add(param1);
+                                i += 2;
+                            }
+                            break;
+                        case OpCode.JumpIfTrue:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 != 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.JumpIfFalse:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 == 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.LessThan:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 < param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Equals:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 == param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.AdjustRelativeBase:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                relativeBase += param1;
+                                i += 2;
+                            }
+                            break;
+                        default:
+                            {
+                                throw new Exception();
+                            }
+                    }
+                }
+            }
+        }
+
+        public static long Day09_Pt1_GetResult(string[] data)
+        {
+            IEnumerable<IEnumerable<int>> GetPermutations(IEnumerable<int> list, int length)
+            {
+                if (length == 1) return list.Select(t => new int[] { t });
+
+                return GetPermutations(list, length - 1).SelectMany(t => list.Where(e => !t.Contains(e)), (t1, t2) => t1.Concat(new int[] { t2 }));
+            }
+
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+            var machine = new StateMachine { inputBuffer = operations.Count > 500 ? 1 : 0, operations = operations };
+            var output = machine.Execute();
+
+            return output;
         }
     }
 }

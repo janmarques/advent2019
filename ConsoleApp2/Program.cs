@@ -1249,7 +1249,6 @@ namespace ConsoleApp2
 
             return -1;
         }
-         */
 
 
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
@@ -1465,6 +1464,48 @@ namespace ConsoleApp2
             var output = machine.Execute();
 
             return output;
+        }
+         */
+
+        class Cell
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+            public int VisibleOthers { get; set; }
+            public bool IsAstroid { get; set; }
+
+            double CalculateAngle(Cell one, Cell two)
+            {
+                return Math.Atan2(one.X - two.X, one.Y - two.Y);
+                //return (double)(one.X - two.X) / (double)(one.Y - two.Y);
+            }
+            public void SetCounts(IEnumerable<Cell> cells)
+            {
+                var angles = cells.Where(x => x != this).Select(x => CalculateAngle(x, this)).ToList();
+                var angles2 = cells.Where(x => x != this).Select(x => CalculateAngle(x, this)).Distinct().ToList();
+                VisibleOthers = cells.Where(x => x != this).Select(x => CalculateAngle(x, this)).Distinct().Count();
+            }
+        }
+        public static long Day10_Pt1_GetResult(string[] data)
+        {
+            var cells = new List<Cell>();
+            for (int j = 0; j < data.Length; j++)
+            {
+                for (int i = 0; i < data[0].Length; i++)
+                {
+                    var isAstroid = data[j][i] == '#';
+                    if (isAstroid)
+                    {
+                        var cell = new Cell() { X = i, Y = j, IsAstroid = true };
+                        cells.Add(cell);
+                    }
+                }
+            }
+
+            cells.ForEach(x => x.SetCounts(cells));
+
+            var max = cells.Max(x => x.VisibleOthers);
+            return max;
         }
     }
 }

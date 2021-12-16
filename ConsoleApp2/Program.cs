@@ -2351,21 +2351,6 @@ namespace ConsoleApp2
             var ballHits = new List<(long, long)>();
             string BallHitToString((long, long) x) => $",{{{x.Item1}, {x.Item2}}}";
 
-
-            var machine = new StateMachine { inputBuffer = 1, operations = operations };
-            var scores = new List<long>();
-            var stopOutput = long.MinValue;
-            var first = true;
-            var shoot = false;
-            var paddleStep = 0;
-            var padelHorizontal = 0L;
-            var padelVertical = 0L;
-            var ballHorizontal = 0L;
-            var ballVertical = 0L;
-            int ball = 0;
-            int goToIndex = 0;
-            var previousBallVertical = long.MaxValue;
-
             int? originalBlocksCount = null;
             var goTo = new Dictionary<int, int> { { 1, 22 }, { 18, 21 }, { 41, 15 }, { 68, 15 }, { 82, 15 }, { 106, 17 },
                 { 152, 25 }, { 166, 25 }, { 300, 17 }, { 318, 17 }, { 352, 17 }, { 378, 17 }, { 418, 15 }, { 444, 15 }, { 484, 15 },
@@ -2383,87 +2368,123 @@ namespace ConsoleApp2
                 ,{9382, 17},{9462, 23},{9474, 23},{9554, 19},{9562, 19},{9642, 21},{9726, 21},{9806, 19},{9810, 19},{9890, 23}
 
             };
-            int z = 0;
-            int GetTarget()
-            {
-                var next = goTo.Where(x => x.Key >= z).OrderBy(x => x.Key).FirstOrDefault();
-                if (next.Key == default)
-                {
-                    return goTo.Last().Value;
-                }
-                else
-                {
-                    return next.Value;
-                }
-            }
+
             while (true)
             {
-                if (ball > 1)
+
+
+                var machine = new StateMachine { inputBuffer = 1, operations = operations };
+                var scores = new List<long>();
+                var stopOutput = long.MinValue;
+                var first = true;
+                var shoot = false;
+                var paddleStep = 0;
+                var padelHorizontal = 0L;
+                var padelVertical = 0L;
+                var ballHorizontal = 0L;
+                var ballVertical = 0L;
+                int ball = 0;
+                int goToIndex = 0;
+                var previousBallVertical = long.MaxValue;
+
+
+                int z = 0;
+                int GetTarget()
                 {
-                    if(originalBlocksCount == null)
+                    var next = goTo.Where(x => x.Key >= z).OrderBy(x => x.Key).FirstOrDefault();
+                    if (next.Key == default)
                     {
-                        originalBlocksCount = cells.Values.Count(x => x.Value == 2);
+                        return goTo.Last().Value;
                     }
-
-                    //PrintGrid(cells.Values.ToList(), scores.LastOrDefault());
-                    //Console.WriteLine(z);
-                    z++;
-
-                    //var x = Console.ReadKey();
-                    //if (x.Key == ConsoleKey.Enter) { machine.inputBuffer = 2; }
-                    //if (x.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = -1; }
-                    //if (x.Key == ConsoleKey.Spacebar) { machine.inputBuffer = 0; }
-                    //if (x.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 1; }
-                }
-
-                var output1 = machine.Execute();
-                if (output1 == stopOutput) { break; }
-                var output2 = machine.Execute();
-                var output3 = machine.Execute();
-
-                if (output1 == -1 && output2 == 0)
-                {
-                    scores.Add(output3);
-                }
-                else
-                {
-                    var cell = GetOrCreate(output1, output2);
-                    cell.Value = output3;
-                    if (output3 == 3)
+                    else
                     {
-                        paddleStep++;
-                        padelHorizontal = output1;
-                        padelVertical = output2;
+                        return next.Value;
                     }
-                    if (output3 == 4)
+                }
+                while (true)
+                {
+                    if (ball > 1)
                     {
-                        ball++;
-                        ballHorizontal = output1;
-                        ballVertical = output2;
-                        if (ballVertical == padelVertical - 1)
+                        if (originalBlocksCount == null)
                         {
-                            ballHits.Add((z, ballHorizontal));
-                            Console.WriteLine(BallHitToString(ballHits.Last()));
-                            //Console.Read();
+                            originalBlocksCount = cells.Values.Count(x => x.Value == 2);
                         }
-                        previousBallVertical = ballVertical;
+
+                        //PrintGrid(cells.Values.ToList(), scores.LastOrDefault());
+                        //Console.WriteLine(z);
+                        z++;
+
+                        //var x = Console.ReadKey();
+                        //if (x.Key == ConsoleKey.Enter) { machine.inputBuffer = 2; }
+                        //if (x.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = -1; }
+                        //if (x.Key == ConsoleKey.Spacebar) { machine.inputBuffer = 0; }
+                        //if (x.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 1; }
                     }
+
+                    var output1 = machine.Execute();
+                    if (output1 == stopOutput) { break; }
+                    var output2 = machine.Execute();
+                    var output3 = machine.Execute();
+
+                    if (output1 == -1 && output2 == 0)
+                    {
+                        scores.Add(output3);
+                    }
+                    else
+                    {
+                        var cell = GetOrCreate(output1, output2);
+                        cell.Value = output3;
+                        if (output3 == 3)
+                        {
+                            paddleStep++;
+                            padelHorizontal = output1;
+                            padelVertical = output2;
+                        }
+                        if (output3 == 4)
+                        {
+                            ball++;
+                            ballHorizontal = output1;
+                            ballVertical = output2;
+                            if (ballVertical == padelVertical - 1)
+                            {
+                                ballHits.Add((z, ballHorizontal));
+                                Console.WriteLine(BallHitToString(ballHits.Last()));
+                                //Console.Read();
+                            }
+                            previousBallVertical = ballVertical;
+                        }
+                    }
+
+                    var target = GetTarget();
+                    machine.inputBuffer = target == padelHorizontal ? 0 : target > padelHorizontal ? 1 : -1;
+                    //var goLeft = padelHorizontal > ballHorizontal;
+                    //var goRight = padelHorizontal < ballHorizontal;
+                    //machine.inputBuffer = goLeft ? -1 : 1;
+
                 }
 
-                var target = GetTarget();
-                machine.inputBuffer = target == padelHorizontal ? 0 : target > padelHorizontal ? 1 : -1;
-                //var goLeft = padelHorizontal > ballHorizontal;
-                //var goRight = padelHorizontal < ballHorizontal;
-                //machine.inputBuffer = goLeft ? -1 : 1;
+                if(cells.Values.Count(x => x.Value == 2) == 0)
+                {
+                    PrintGrid(cells.Values.ToList(), scores.Max());
+                    Console.WriteLine($"Blocks left: {cells.Values.Count(x => x.Value == 2)} / {originalBlocksCount}");
+                    Console.WriteLine(string.Join("", ballHits/*.TakeLast(5)*/.Select(BallHitToString)));
+                    Console.Read();
+                }
 
+                var lastGoTo = goTo.Last();
+                var lastHitAtSamePosition = ballHits.Last(x => x.Item2 == lastGoTo.Value);
+                if(lastHitAtSamePosition.Item1 > lastGoTo.Key)
+                {
+                    goTo[(int)lastHitAtSamePosition.Item1] = (int)lastHitAtSamePosition.Item2;
+                }
+                var lastHit = ballHits.Last();
+                goTo[(int)lastHit.Item1] = (int)lastHit.Item2;
+
+               
             }
 
-            PrintGrid(cells.Values.ToList(), scores.Max());
-            Console.WriteLine($"Blocks left: {cells.Values.Count(x => x.Value == 2)} / {originalBlocksCount}");
-            Console.WriteLine(string.Join("", ballHits.TakeLast(5).Select(BallHitToString)));
-            Console.Read();
-
-            return scores.Max().ToString();
+            return "";
+            //return scores.Max().ToString();
             //return string.Join("", ballHits.Select(BallHitToString)); // 33 * 273 = 9009
             // 9009 too low
         }

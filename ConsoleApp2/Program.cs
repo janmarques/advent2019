@@ -2133,6 +2133,8 @@ namespace ConsoleApp2
                     default: throw new ArgumentOutOfRangeException();
                 }
             }
+
+            private bool first = true;
             public long Execute()
             {
                 while (true)
@@ -2166,7 +2168,9 @@ namespace ConsoleApp2
                             break;
                         case OpCode.Input:
                             {
+                                //Set(opCode.parameterMode1, i + 1, first ? 2 : inputBuffer);
                                 Set(opCode.parameterMode1, i + 1, inputBuffer);
+                                first = false;
                                 i += 2;
                             }
                             break;
@@ -2270,6 +2274,190 @@ namespace ConsoleApp2
             }
 
             return blocks.Count;
+        }
+
+        class Cell
+        {
+            public long X { get; set; }
+            public long Y { get; set; }
+            public long Value { get; set; }
+            public override string ToString()
+            {
+                switch (Value)
+                {
+                    default: throw new Exception();
+                    case 0: return " ";
+                    case 1: return "|";
+                    case 2: return "#";
+                    case 3: return "Ü";
+                    case 4: return "O";
+                }
+            }
+        }
+        //        0 is an empty tile.No game object appears in this tile.
+        //1 is a wall tile.Walls are indestructible barriers.
+        //2 is a block tile.Blocks can be broken by the ball.
+        //3 is a horizontal paddle tile. The paddle is indestructible.
+        //4 is a ball tile.The ball moves diagonally and bounces off objects.
+        public static string Day13_Pt2_GetResult(string[] data)
+        {
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+
+            var cells = new Dictionary<(long x, long y), Cell>();
+            Cell GetOrCreate(long x, long y)
+            {
+                var key = (x, y);
+                if (!cells.ContainsKey(key))
+                {
+                    cells[key] = new Cell() { X = x, Y = y };
+                }
+                return cells[key];
+            }
+
+            void PrintGrid(List<Cell> cells, long score)
+            {
+                var minX = cells.Min(x => x.X);
+                var maxX = cells.Max(x => x.X);
+                var minY = cells.Min(x => x.Y);
+                var maxY = cells.Max(x => x.Y);
+
+                Console.Clear();
+                Console.WriteLine("Score" + score);
+                for (long y = minY; y <= maxY; y++)
+                {
+                    for (long x = minX; x <= maxX; x++)
+                    {
+                        var cell = cells.SingleOrDefault(z => z.X == x && z.Y == y);
+                        if (cell != null)
+                        {
+                            Console.Write(cell.ToString());
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+
+            }
+
+            var ballHits = new List<(long, long)>();
+            string BallHitToString((long, long) x) => $",{{{x.Item1}, {x.Item2}}}";
+
+
+            var machine = new StateMachine { inputBuffer = 1, operations = operations };
+            var scores = new List<long>();
+            var stopOutput = long.MinValue;
+            var first = true;
+            var shoot = false;
+            var paddleStep = 0;
+            var padelHorizontal = 0L;
+            var padelVertical = 0L;
+            var ballHorizontal = 0L;
+            var ballVertical = 0L;
+            int ball = 0;
+            int goToIndex = 0;
+            var previousBallVertical = long.MaxValue;
+
+            int? originalBlocksCount = null;
+            var goTo = new Dictionary<int, int> { { 1, 22 }, { 18, 21 }, { 41, 15 }, { 68, 15 }, { 82, 15 }, { 106, 17 },
+                { 152, 25 }, { 166, 25 }, { 300, 17 }, { 318, 17 }, { 352, 17 }, { 378, 17 }, { 418, 15 }, { 444, 15 }, { 484, 15 },
+                { 510, 27 },{532, 27},{554, 27},{584, 13},{610, 13},{642, 13},{676, 13},{710, 13},{776, 29},{808, 29},{828, 29},{956, 9}
+                ,{996, 9},{1010, 9},{1186, 19},{1206, 19},{1220, 19},{1326, 27},{1342, 27},{1380, 27},{1406, 27},{1458, 25},{1462, 25},{1480, 33}
+                ,{1494, 33},{1510, 39},{1520, 39},{1536, 35},{1544, 35},{1566, 25},{1584, 25},{1632, 3}, {1674, 3},{1690, 3},{1740, 3},{1758, 3},{1836, 25}
+                ,{1880, 25},{1936, 25},{1986, 25},{2578, 29},{2586, 29},{2644, 29},{2824, 27}
+
+            };
+            int z = 0;
+            int GetTarget()
+            {
+                var next = goTo.Where(x => x.Key >= z).OrderBy(x => x.Key).FirstOrDefault();
+                if (next.Key == default)
+                {
+                    return goTo.Last().Value;
+                }
+                else
+                {
+                    return next.Value;
+                }
+            }
+            while (true)
+            {
+                if (ball > 1)
+                {
+                    if(originalBlocksCount == null)
+                    {
+                        originalBlocksCount = cells.Values.Count(x => x.Value == 2);
+                    }
+
+                    //PrintGrid(cells.Values.ToList(), scores.LastOrDefault());
+                    //Console.WriteLine(z);
+                    z++;
+
+                    //var x = Console.ReadKey();
+                    //if (x.Key == ConsoleKey.Enter) { machine.inputBuffer = 2; }
+                    //if (x.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = -1; }
+                    //if (x.Key == ConsoleKey.Spacebar) { machine.inputBuffer = 0; }
+                    //if (x.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 1; }
+                }
+
+                var output1 = machine.Execute();
+                if (output1 == stopOutput) { break; }
+                var output2 = machine.Execute();
+                var output3 = machine.Execute();
+
+                if (output1 == -1 && output2 == 0)
+                {
+                    scores.Add(output3);
+                }
+                else
+                {
+                    var cell = GetOrCreate(output1, output2);
+                    cell.Value = output3;
+                    if (output3 == 3)
+                    {
+                        paddleStep++;
+                        padelHorizontal = output1;
+                        padelVertical = output2;
+                    }
+                    if (output3 == 4)
+                    {
+                        ball++;
+                        ballHorizontal = output1;
+                        ballVertical = output2;
+                        if (ballVertical == padelVertical - 1)
+                        {
+                            ballHits.Add((z, ballHorizontal));
+                            Console.WriteLine(BallHitToString(ballHits.Last()));
+                            //Console.Read();
+                        }
+                        previousBallVertical = ballVertical;
+                    }
+                }
+
+                var target = GetTarget();
+                machine.inputBuffer = target == padelHorizontal ? 0 : target > padelHorizontal ? 1 : -1;
+                //var goLeft = padelHorizontal > ballHorizontal;
+                //var goRight = padelHorizontal < ballHorizontal;
+                //machine.inputBuffer = goLeft ? -1 : 1;
+
+            }
+
+            PrintGrid(cells.Values.ToList(), scores.Max());
+            Console.WriteLine($"Blocks left: {cells.Values.Count(x => x.Value == 2)} / {originalBlocksCount}");
+            Console.WriteLine(string.Join("", ballHits.TakeLast(5).Select(BallHitToString)));
+            Console.Read();
+
+            return scores.Max().ToString();
+            //return string.Join("", ballHits.Select(BallHitToString)); // 33 * 273 = 9009
+            // 9009 too low
         }
     }
 }

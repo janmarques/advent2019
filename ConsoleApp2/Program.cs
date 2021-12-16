@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1835,29 +1836,8 @@ namespace ConsoleApp2
 
         }
 
-         */
 
-        class Coordinate
-        {
-            public int X { get; set; }
-            public int Y { get; set; }
-            public int Z { get; set; }
-            public override string ToString() => $"{X,3},{Y,3},{Z,3}";
-
-            public Coordinate Clone() => new Coordinate { X = X, Y = Y, Z = Z };
-            int Abs(int x) => Math.Abs(x);
-            public int Sum() => Abs(X)+ Abs(Y) + Abs(Z);
-        }
-        class Moon
-        {
-            public Coordinate Position { get; set; }
-            public Coordinate Velocity { get; set; }
-            public int Product() => Position.Sum() * Velocity.Sum();
-
-            //public Coordinate NewPosition { get; set; }
-            //public Coordinate NewVelocity { get; set; }
-            public override string ToString() => $"P:{Position} V:{Velocity}";
-        }
+    
 
         public static long Day12_Pt1_GetResult(string[] data)
         {
@@ -1936,5 +1916,156 @@ namespace ConsoleApp2
 
             return energy; // 14645 too high
         }
+         */
+
+        class Coordinate
+        {
+            public long X { get; set; }
+            public long Y { get; set; }
+            public long Z { get; set; }
+            public override string ToString() => $"{X,3},{Y,3},{Z,3}";
+
+            public Coordinate Clone() => new Coordinate { X = X, Y = Y, Z = Z };
+            long Abs(long x) => Math.Abs(x);
+            public long Sum() => Abs(X) + Abs(Y) + Abs(Z);
+            public long Hash() => ToString().GetHashCode();
+        }
+        class Moon
+        {
+            public Coordinate Position { get; set; }
+            public Coordinate Velocity { get; set; }
+            public long Product() => Position.Sum() * Velocity.Sum();
+
+            //public Coordinate NewPosition { get; set; }
+            //public Coordinate NewVelocity { get; set; }
+            public override string ToString() => $"P:{Position} V:{Velocity}";
+
+            public string Hash() => (Position.ToString() + Velocity.ToString());
+            public string XHash() => (Position.X.ToString() + Velocity.X.ToString());
+            public string YHash() => (Position.Y.ToString() + Velocity.Y.ToString());
+            public string ZHash() => (Position.Z.ToString() + Velocity.Z.ToString());
+        }
+        public static long Day12_Pt1_GetResult(string[] data)
+        {
+            var moons = data
+                .Select(x => x.Replace("<", "").Replace(">", ""))
+                .Select(x => x.Split(", ")).Select(x => (X: x[0].Split("=")[1], Y: x[1].Split("=")[1], Z: x[2].Split("=")[1]))
+                .Select(x => (X: ToInt(x.X), Y: ToInt(x.Y), Z: ToInt(x.Z)))
+                .Select(x => new Moon { Position = new Coordinate { X = x.X, Y = x.Y, Z = x.Z }, Velocity = new Coordinate() })
+                .ToList();
+
+            Console.WriteLine($"Step 0");
+            moons.ForEach(x => Console.WriteLine(x));
+            //moons.ForEach(x =>
+            //{
+            //    x.NewVelocity = x.Velocity.Clone();
+            //    x.NewPosition = x.Position.Clone();
+            //});
+            var visitedX = new HashSet<string>();
+            var visitedY = new HashSet<string>();
+            var visitedZ = new HashSet<string>();
+
+            long xRepeat = 0;
+            long yRepeat = 0;
+            long zRepeat = 0;
+            var stopwatch = Stopwatch.StartNew();
+            for (long i = 0; ; i++)
+            {
+                if (i % 100_000 == 0)
+                {
+                    Console.WriteLine($"Step {i}: {stopwatch.Elapsed}");
+                    moons.ForEach(x => Console.WriteLine(x));
+                }
+                var xHash = moons[0].XHash() + moons[1].XHash() + moons[2].XHash() + moons[3].XHash();
+                var yHash = moons[0].YHash() + moons[1].YHash() + moons[2].YHash() + moons[3].YHash();
+                var zHash = moons[0].ZHash() + moons[1].ZHash() + moons[2].ZHash() + moons[3].ZHash();
+                if (!visitedX.Add(xHash))
+                {
+                    if (xRepeat == 0) { xRepeat = i; }
+                    if (xRepeat != 0 && yRepeat != 0 && zRepeat != 0) { break; }
+                }
+                if (!visitedY.Add(yHash))
+                {
+                    if (yRepeat == 0) { yRepeat = i; }
+                    if (xRepeat != 0 && yRepeat != 0 && zRepeat != 0) { break; }
+                }
+                if (!visitedZ.Add(zHash))
+                {
+                    if (zRepeat == 0) { zRepeat = i; }
+                    if (xRepeat != 0 && yRepeat != 0 && zRepeat != 0) { break; }
+                }
+                foreach (var moon in moons)
+                {
+                    foreach (var otherMoon in moons.Where(x => x != moon))
+                    {
+                        var xIncrease = moon.Position.X == otherMoon.Position.X ? (bool?)null : moon.Position.X < otherMoon.Position.X;
+                        var yIncrease = moon.Position.Y == otherMoon.Position.Y ? (bool?)null : moon.Position.Y < otherMoon.Position.Y;
+                        var zIncrease = moon.Position.Z == otherMoon.Position.Z ? (bool?)null : moon.Position.Z < otherMoon.Position.Z;
+                        if (xIncrease.HasValue)
+                        {
+                            if (xIncrease.Value)
+                            {
+                                moon.Velocity.X++;
+                            }
+                            else
+                            {
+                                moon.Velocity.X--;
+                            }
+                        }
+                        if (yIncrease.HasValue)
+                        {
+                            if (yIncrease.Value)
+                            {
+                                moon.Velocity.Y++;
+                            }
+                            else
+                            {
+                                moon.Velocity.Y--;
+                            }
+                        }
+                        if (zIncrease.HasValue)
+                        {
+                            if (zIncrease.Value)
+                            {
+                                moon.Velocity.Z++;
+                            }
+                            else
+                            {
+                                moon.Velocity.Z--;
+                            }
+                        }
+                    }
+                }
+
+                foreach (var moon in moons)
+                {
+                    moon.Position.X += moon.Velocity.X;
+                    moon.Position.Y += moon.Velocity.Y;
+                    moon.Position.Z += moon.Velocity.Z;
+                }
+
+                //Console.WriteLine($"Step {i + 1}");
+            }
+
+            long gcf(long  a, long b)
+            {
+                while (b != 0)
+                {
+                    var temp = b;
+                    b = a % b;
+                    a = temp;
+                }
+                return a;
+            }
+            long lcm(long a, long b)
+            {
+                return (a / gcf(a, b)) * b;
+            }
+
+            var result = lcm(xRepeat, lcm(yRepeat, zRepeat)); // lcm code cheated!
+
+            return result; // 803881 too low
+        }
+
     }
 }

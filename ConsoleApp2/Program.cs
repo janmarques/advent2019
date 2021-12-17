@@ -2549,7 +2549,7 @@ namespace ConsoleApp2
             public int Count { get; set; }
             public string Name { get; set; }
             public Dictionary<Material, int> SourceMaterials { get; set; } = new Dictionary<Material, int>();
-
+            public long Index { get; set; }
             public override string ToString()
             {
                 return Name;
@@ -2577,7 +2577,19 @@ namespace ConsoleApp2
             }
             var fuel = materials["FUEL"];
 
+            void SetIndex(Material material, long index = 1)
+            {
+                material.Index = Math.Max(material.Index, index);
 
+                int i = 1;
+                foreach (var item in material.SourceMaterials)
+                {
+                    SetIndex(item.Key, index * 10 + i);
+                    i++;
+                }
+            }
+
+            SetIndex(fuel);
 
             //var oreUsed = 0;
             var inventory = materials.ToDictionary(x => x.Value, x => 0.0);
@@ -2610,30 +2622,19 @@ namespace ConsoleApp2
 
 
             // decompose rest
-            void Decompose(Material material)
+            for (int i = 0; i < 20; i++)
             {
-                if (material == ore) { return; }
-                
-                if (inventory[material] != 0)
+
+                foreach (var material in inventory.OrderByDescending(x => x.Key.Index/* Guid.NewGuid()*/).Where(x => x.Key != ore && x.Value != 0))
                 {
-                    
-                    foreach (var item in material.SourceMaterials)
+                    foreach (var item in material.Key.SourceMaterials.OrderByDescending(x => x.Key.Index))
                     {
+                        inventory[item.Key] += ((double)material.Value / (double)material.Key.Count) * (double)item.Value;
 
-                        inventory[item.Key] += ((double)inventory[material] / (double)material.Count) * (double)item.Value;
                     }
-                    inventory[material] = 0;
+                    inventory[material.Key] = 0;
                 }
-                foreach (var item in material.SourceMaterials)
-                {
-                    Decompose(item.Key);
-                }
-
             }
-            Decompose(fuel);
-            Decompose(fuel);
-            Decompose(fuel);
-            Decompose(fuel);
 
             oreUsedForOneFuel -= inventory[ore];
 

@@ -2577,23 +2577,11 @@ namespace ConsoleApp2
             }
             var fuel = materials["FUEL"];
 
-            void SetIndex(Material material, long index = 1)
-            {
-                material.Index = Math.Max(material.Index, index);
 
-                int i = 1;
-                foreach (var item in material.SourceMaterials)
-                {
-                    SetIndex(item.Key, index * 10 + i);
-                    i++;
-                }
-            }
-
-            SetIndex(fuel);
 
             //var oreUsed = 0;
-            var inventory = materials.ToDictionary(x => x.Value, x => 0.0);
-            double GetOrCreate(Material material, double count, double oreUsed)
+            var inventory = materials.ToDictionary(x => x.Value, x => 0L);
+            long GetOrCreate(Material material, long count, long oreUsed)
             {
                 if (material == ore)
                 {
@@ -2605,7 +2593,7 @@ namespace ConsoleApp2
                     var neededToCreate = count - inventory[material];
                     if (neededToCreate > 0)
                     {
-                        var unitsToCreate = (int)Math.Ceiling((double)neededToCreate / material.Count);
+                        var unitsToCreate = (long)Math.Ceiling((double)neededToCreate / material.Count);
                         foreach (var sourceMaterial in material.SourceMaterials)
                         {
                             oreUsed = GetOrCreate(sourceMaterial.Key, sourceMaterial.Value * unitsToCreate, oreUsed);
@@ -2617,30 +2605,32 @@ namespace ConsoleApp2
                 return oreUsed;
             }
 
-            double oreUsedForOneFuel = GetOrCreate(fuel, 1, 0);
+            Console.WriteLine(GetOrCreate(fuel, 998536, 0));
+
             var aTrilli = 1000000000000; // 1000000000000
-
-
-            // decompose rest
-            for (int i = 0; i < 20; i++)
-            {
-
-                foreach (var material in inventory.OrderByDescending(x => x.Key.Index/* Guid.NewGuid()*/).Where(x => x.Key != ore && x.Value != 0))
-                {
-                    foreach (var item in material.Key.SourceMaterials.OrderByDescending(x => x.Key.Index))
-                    {
-                        inventory[item.Key] += ((double)material.Value / (double)material.Key.Count) * (double)item.Value;
-
-                    }
-                    inventory[material.Key] = 0;
-                }
-            }
-
-            oreUsedForOneFuel -= inventory[ore];
+            var oreUsedForOneFuel = GetOrCreate(fuel, 1, 0);
 
             var fuelCreated = aTrilli / oreUsedForOneFuel;
 
-            return Math.Floor(fuelCreated); // 998537 too high
+            foreach (var material in inventory)
+            {
+                inventory[material.Key] *= fuelCreated;
+            }
+
+            var remainingOre = aTrilli - fuelCreated * oreUsedForOneFuel;
+
+            while (true)
+            {
+                var usedOre = GetOrCreate(fuel, 1, 0);
+                if (usedOre > remainingOre)
+                {
+                    break;
+                }
+                remainingOre -= usedOre;
+                fuelCreated++;
+            }
+
+            return fuelCreated;
         }
     }
-}
+}// 998537 too high

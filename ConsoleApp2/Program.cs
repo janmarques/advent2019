@@ -2065,7 +2065,6 @@ namespace ConsoleApp2
 
             return result; // 803881 too low
         }
-         */
 
 
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
@@ -2467,7 +2466,7 @@ namespace ConsoleApp2
                 {
                     PrintGrid(cells.Values.ToList(), scores.Max());
                     Console.WriteLine($"Blocks left: {cells.Values.Count(x => x.Value == 2)} / {originalBlocksCount}");
-                    Console.WriteLine(string.Join("", ballHits/*.TakeLast(5)*/.Select(BallHitToString)));
+                    Console.WriteLine(string.Join("", ballHits.Select(BallHitToString)));
                     Console.Read();
                 }
 
@@ -2487,6 +2486,94 @@ namespace ConsoleApp2
             //return scores.Max().ToString();
             //return string.Join("", ballHits.Select(BallHitToString)); // 33 * 273 = 9009
             // 9009 too low
+        }
+         */
+
+        class Material
+        {
+            public int Count { get; set; }
+            public string Name { get; set; }
+            public Dictionary<Material, int> SourceMaterials { get; set; } = new Dictionary<Material, int>();
+        }
+
+        public static long Day14_Pt1_GetResult(string[] data)
+        {
+            var materials = data.Select(x => x.Split(" => ")[1]).Select(x => (count: x.Split(" ")[0], name: x.Split(" ")[1])).Select(x => new Material { Count = ToInt(x.count), Name = x.name }).ToDictionary(x => x.Name, x => x);
+            var ore = new Material { Name = "ORE" };
+            materials.Add("ORE", ore);
+            foreach (var item in data)
+            {
+                var split = item.Split(" => ");
+                var destinationName = split[1].Split(" ")[1];
+                var destination = materials[destinationName];
+                var sources = split[0].Split(", ");
+                foreach (var source in sources)
+                {
+                    var splitSource = source.Split(" ");
+                    var count = ToInt(splitSource[0]);
+                    var name = splitSource[1];
+                    var sourceMaterial = materials[name];
+                    destination.SourceMaterials.Add(sourceMaterial, count);
+                }
+            }
+            var fuel = materials["FUEL"];
+            
+
+
+            var oreUsed = 0;
+            var inventory = materials.ToDictionary(x => x.Value, x => 0);
+            void GetOrCreate(Material material, int count)
+            {
+                if (material == ore)
+                {
+                    oreUsed += count;
+                }
+                else
+                {
+
+                    var neededToCreate = count - inventory[material];
+                    if (neededToCreate > 0)
+                    {
+                        var unitsToCreate = (int)Math.Ceiling((double)neededToCreate / material.Count);
+                        foreach (var sourceMaterial in material.SourceMaterials)
+                        {
+                            GetOrCreate(sourceMaterial.Key, sourceMaterial.Value * unitsToCreate);
+                        }
+                        inventory[material] += unitsToCreate * material.Count;
+                    };
+                    inventory[material] -= count;
+                }
+            }
+
+            GetOrCreate(fuel, 1);
+            return oreUsed;
+
+            //var A = materials["A"];
+            //var B = materials["B"];
+            //var C = materials["C"];
+            ////var D = materials["D"];
+            //int GetOreNeeded(Material from, Material to)
+            //{
+            //    var oreCount = 0;
+            //    foreach (var item in from.SourceMaterials)
+            //    {
+            //        if (item.Key == to)
+            //        {
+            //            return item.Value;
+            //        }
+            //        else
+            //        {
+            //            var need = (int)Math.Ceiling((double)item.Key.Count / item.Value);
+            //            var ore = GetOreNeeded(item.Key, to);
+            //            oreCount += ore * need;
+            //        }
+            //    }
+            //    return oreCount;
+            //}
+
+            //var oreCount = GetOreNeeded(D, ore);
+
+            //return oreCount;
         }
     }
 }

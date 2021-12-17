@@ -2610,19 +2610,30 @@ namespace ConsoleApp2
 
 
             // decompose rest
-            for (int i = 0; i < 1000; i++)
+            void Decompose(Material material)
             {
-
-                foreach (var material in inventory/*.OrderBy(x => Guid.NewGuid())*/.Where(x => x.Key != ore && x.Value != 0))
+                if (material == ore) { return; }
+                
+                if (inventory[material] != 0)
                 {
-                    foreach (var item in material.Key.SourceMaterials)
+                    
+                    foreach (var item in material.SourceMaterials)
                     {
-                        inventory[item.Key] += ((double)material.Value / (double)material.Key.Count) * (double)item.Value;
 
+                        inventory[item.Key] += ((double)inventory[material] / (double)material.Count) * (double)item.Value;
                     }
-                    inventory[material.Key] = 0;
+                    inventory[material] = 0;
                 }
+                foreach (var item in material.SourceMaterials)
+                {
+                    Decompose(item.Key);
+                }
+
             }
+            Decompose(fuel);
+            Decompose(fuel);
+            Decompose(fuel);
+            Decompose(fuel);
 
             oreUsedForOneFuel -= inventory[ore];
 

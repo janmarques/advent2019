@@ -2555,7 +2555,7 @@ namespace ConsoleApp2
                 return Name;
             }
         }
-        public static long Day14_Pt2_GetResult(string[] data)
+        public static double Day14_Pt2_GetResult(string[] data)
         {
             var materials = data.Select(x => x.Split(" => ")[1]).Select(x => (count: x.Split(" ")[0], name: x.Split(" ")[1])).Select(x => new Material { Count = ToInt(x.count), Name = x.name }).ToDictionary(x => x.Name, x => x);
             var ore = new Material { Name = "ORE" };
@@ -2580,8 +2580,8 @@ namespace ConsoleApp2
 
 
             //var oreUsed = 0;
-            var inventory = materials.ToDictionary(x => x.Value, x => 0L);
-            int GetOrCreate(Material material, int count, int oreUsed)
+            var inventory = materials.ToDictionary(x => x.Value, x => 0.0);
+            double GetOrCreate(Material material, double count, double oreUsed)
             {
                 if (material == ore)
                 {
@@ -2605,30 +2605,30 @@ namespace ConsoleApp2
                 return oreUsed;
             }
 
+            double oreUsedForOneFuel = GetOrCreate(fuel, 1, 0);
             var aTrilli = 1000000000000; // 1000000000000
-            var oreUsedForOneFuel = GetOrCreate(fuel, 1, 0);
+
+
+            // decompose rest
+            for (int i = 0; i < 1000; i++)
+            {
+
+                foreach (var material in inventory/*.OrderBy(x => Guid.NewGuid())*/.Where(x => x.Key != ore && x.Value != 0))
+                {
+                    foreach (var item in material.Key.SourceMaterials)
+                    {
+                        inventory[item.Key] += ((double)material.Value / (double)material.Key.Count) * (double)item.Value;
+
+                    }
+                    inventory[material.Key] = 0;
+                }
+            }
+
+            oreUsedForOneFuel -= inventory[ore];
 
             var fuelCreated = aTrilli / oreUsedForOneFuel;
 
-            foreach (var material in inventory)
-            {
-                inventory[material.Key] *= fuelCreated;
-            }
-
-            var remainingOre = aTrilli - fuelCreated * oreUsedForOneFuel;
-
-            while (true)
-            {
-                var usedOre = GetOrCreate(fuel, 1, 0);
-                if(usedOre > remainingOre)
-                {
-                    break;
-                }
-                remainingOre -= usedOre;
-                fuelCreated++;
-            }
-
-            return fuelCreated;
+            return Math.Floor(fuelCreated); // 998537 too high
         }
     }
 }

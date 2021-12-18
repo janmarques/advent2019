@@ -2739,7 +2739,6 @@ namespace ConsoleApp2
             return "";
         }
 
-         */
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
         enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
         class StateMachine
@@ -3072,6 +3071,49 @@ namespace ConsoleApp2
 
             return "";
         }
+         */
 
+
+        public static string Day16_Pt1_GetResult(string[] data)
+        {
+            var pattern = new[] { 0, 1, 0, -1 };
+            IEnumerable<int> GetPattern(int repeat)
+            {
+                var lst = new List<int>();
+                foreach (var item in pattern)
+                {
+                    for (int i = 0; i < repeat; i++)
+                    {
+                        lst.Add(item);
+                    }
+                }
+
+                return Enumerable.Repeat(lst, 200).SelectMany(x => x).Skip(1);
+            }
+            var input = data.Single().Select(ToInt).ToList();
+
+            var stepSum = "";
+            for (int i = 0; i < 100; i++)
+            {
+                Console.WriteLine(i);
+                stepSum = "";
+                for (int j = 1; j <= input.Count; j++)
+                {
+                    var localPattern = GetPattern(j).ToArray();
+                    var localSum = 0;
+                    for (int k = 0; k < input.Count; k++)
+                    {
+                        var number = input[k];
+                        var patternMultiplier = localPattern[k];
+                        localSum += number * patternMultiplier;
+                    }
+                    localSum = Math.Abs(localSum) % 10;
+                    stepSum += localSum;
+                }
+                input = stepSum.Select(ToInt).ToList();
+            }
+
+            return new string(stepSum.Take(8).ToArray());
+        }
     }
 }

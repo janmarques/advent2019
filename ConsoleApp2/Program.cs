@@ -2541,7 +2541,6 @@ namespace ConsoleApp2
             GetOrCreate(fuel, 1);
             return oreUsed;
         }
-         */
 
 
         class Material
@@ -2631,6 +2630,294 @@ namespace ConsoleApp2
             }
 
             return fuelCreated;
+        }// 998537 too high
+         */
+        enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
+        enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
+        class StateMachine
+        {
+            private ParameterMode GetParameterMode(char v) => (ParameterMode)ToInt(v);
+            (ParameterMode parameterMode1, ParameterMode parameterMode2, ParameterMode parameterMode3, OpCode opCode) GetOpcode(long input)
+            {
+                var inputString = input.ToString();
+                var opCode = (OpCode)ToInt(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = ParameterMode.Position;
+                var parameterMode2 = ParameterMode.Position;
+                var parameterMode3 = ParameterMode.Position;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = GetParameterMode(inputString[0]);
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = GetParameterMode(inputString[0]);
+                    parameterMode1 = GetParameterMode(inputString[1]);
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = GetParameterMode(inputString[0]);
+                    parameterMode2 = GetParameterMode(inputString[1]);
+                    parameterMode1 = GetParameterMode(inputString[2]);
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+
+            public long inputBuffer { get; set; }
+            public List<long> outputBuffer { get; set; } = new List<long>();
+            public long i { get; set; }
+            public long relativeBase { get; set; }
+            public Dictionary<long, long> operations { get; set; }
+
+            long GetOrDefault(long address)
+            {
+                if (operations.TryGetValue(address, out var result))
+                {
+                    return result;
+                }
+                return 0;
+            }
+            long Get(ParameterMode mode, long address)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: return GetOrDefault(GetOrDefault(address));
+                    case ParameterMode.Value: return GetOrDefault(address);
+                    case ParameterMode.Relative: return GetOrDefault(relativeBase + GetOrDefault(address));
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            void Set(ParameterMode mode, long address, long value)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: operations[GetOrDefault(address)] = value; break;
+                    case ParameterMode.Value: operations[address] = value; break;
+                    case ParameterMode.Relative: operations[relativeBase + GetOrDefault(address)] = value; break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            private bool first = true;
+            public long Execute()
+            {
+                while (true)
+                {
+                    var opCode = GetOpcode(operations[i]);
+                    switch (opCode.opCode)
+                    {
+                        case OpCode.Stop:
+                            {
+                                //return operations[0];
+                                //throw new InvalidOperationException();
+                                return long.MinValue;
+                            }
+                        case OpCode.Add:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 + param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Multiply:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 * param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Input:
+                            {
+                                //Set(opCode.parameterMode1, i + 1, first ? 2 : inputBuffer);
+                                Set(opCode.parameterMode1, i + 1, inputBuffer);
+                                first = false;
+                                i += 2;
+                            }
+                            break;
+                        case OpCode.Output:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                outputBuffer.Add(param1);
+                                i += 2;
+                                return param1;
+                            }
+                            break;
+                        case OpCode.JumpIfTrue:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 != 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.JumpIfFalse:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 == 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.LessThan:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 < param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Equals:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 == param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.AdjustRelativeBase:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                relativeBase += param1;
+                                i += 2;
+                            }
+                            break;
+                        default:
+                            {
+                                throw new Exception();
+                            }
+                    }
+                }
+            }
+        }
+
+        class Cell
+        {
+            public long X { get; set; }
+            public long Y { get; set; }
+            public long Value { get; set; }
+            public bool HasDroid { get; set; }
+
+            public override string ToString()
+            {
+                switch (Value)
+                {
+                    default: throw new Exception();
+                    case 0: return "#";
+                    case 1: return HasDroid ? "D" : ".";
+                    case 2: return "!";
+                }
+            }
+        }
+
+        public static string Day15_Pt1_GetResult(string[] data)
+        {
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+
+            var cells = new Dictionary<(long x, long y), Cell>();
+            Cell GetOrCreate(long x, long y)
+            {
+                var key = (x, y);
+                if (!cells.ContainsKey(key))
+                {
+                    cells[key] = new Cell() { X = x, Y = y };
+                }
+                return cells[key];
+            }
+
+            void PrintGrid(IEnumerable<Cell> cells)
+            {
+                var minX = cells.Min(x => x.X);
+                var maxX = cells.Max(x => x.X);
+                var minY = cells.Min(x => x.Y);
+                var maxY = cells.Max(x => x.Y);
+
+                Console.Clear();
+                for (long y = minY; y <= maxY; y++)
+                {
+                    for (long x = minX; x <= maxX; x++)
+                    {
+                        var cell = cells.SingleOrDefault(z => z.X == x && z.Y == y);
+                        if (cell != null)
+                        {
+                            Console.Write(cell.ToString());
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+
+            }
+
+            var machine = new StateMachine { inputBuffer = 1, operations = operations };
+            var x = 0;
+            var y = 0;
+            var stopOutput = long.MinValue;
+            var lastDroidLocation = GetOrCreate(0, 0);
+            lastDroidLocation.HasDroid = true;
+            lastDroidLocation.Value = 1;
+                PrintGrid(cells.Values);
+            while (true)
+            {
+                var newX = x;
+                var newY = y;
+                var input = Console.ReadKey();
+                if (input.Key == ConsoleKey.UpArrow) { machine.inputBuffer = 1; newY += -1; }
+                if (input.Key == ConsoleKey.DownArrow) { machine.inputBuffer = 2; newY += 1; }
+                if (input.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 3; newX += 1; }
+                if (input.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = 4; newX += -1; }
+
+
+                var output = machine.Execute();
+                if (output == stopOutput) { throw new Exception(); }
+                var cell = GetOrCreate(newX, newY);
+                cell.Value = output;
+                if (output != 0)
+                {
+                    lastDroidLocation.HasDroid = false;
+                    cell.HasDroid = true;
+                    x = newX;
+                    y = newY;
+                    lastDroidLocation = cell;
+                }
+                PrintGrid(cells.Values);
+
+                //0: The repair droid hit a wall. Its position has not changed.
+                //1: The repair droid has moved one step in the requested direction.
+                //2: The repair droid has moved one step in the requested direction; its new position is the location of the oxygen system.
+
+            }
+
+            return "";
+            //return scores.Max().ToString();
+            //return string.Join("", ballHits.Select(BallHitToString)); // 33 * 273 = 9009
+            // 9009 too low
         }
     }
-}// 998537 too high
+}

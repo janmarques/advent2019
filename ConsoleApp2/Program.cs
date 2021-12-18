@@ -2814,6 +2814,7 @@ namespace ConsoleApp2
             public long Y { get; set; }
             public long Value { get; set; }
             public bool HasDroid { get; set; }
+            public bool IsStart { get; set; }
 
             public override string ToString()
             {
@@ -2821,7 +2822,7 @@ namespace ConsoleApp2
                 {
                     default: throw new Exception();
                     case 0: return "#";
-                    case 1: return HasDroid ? "D" : ".";
+                    case 1: return IsStart ? "0" : (HasDroid ? "D" : ".");
                     case 2: return "!";
                 }
             }
@@ -2881,17 +2882,29 @@ namespace ConsoleApp2
             var stopOutput = long.MinValue;
             var lastDroidLocation = GetOrCreate(0, 0);
             lastDroidLocation.HasDroid = true;
+            lastDroidLocation.IsStart = true;
             lastDroidLocation.Value = 1;
-                PrintGrid(cells.Values);
+            PrintGrid(cells.Values);
+            var random = new Random();
+            int j = 0;
             while (true)
             {
+                j++;
+                if (j % 10000 == 0)
+                {
+                    PrintGrid(cells.Values);
+                }
                 var newX = x;
                 var newY = y;
-                var input = Console.ReadKey();
-                if (input.Key == ConsoleKey.UpArrow) { machine.inputBuffer = 1; newY += -1; }
-                if (input.Key == ConsoleKey.DownArrow) { machine.inputBuffer = 2; newY += 1; }
-                if (input.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 3; newX += 1; }
-                if (input.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = 4; newX += -1; }
+                var input = random.Next(1, 5);
+                //if (input.Key == ConsoleKey.UpArrow) { machine.inputBuffer = 1; newY += -1; }
+                //if (input.Key == ConsoleKey.DownArrow) { machine.inputBuffer = 2; newY += 1; }
+                //if (input.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 3; newX += 1; }
+                //if (input.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = 4; newX += -1; }
+                if (input == 1) { machine.inputBuffer = 1; newY += -1; }
+                if (input == 2) { machine.inputBuffer = 2; newY += 1; }
+                if (input == 3) { machine.inputBuffer = 3; newX += 1; }
+                if (input == 4) { machine.inputBuffer = 4; newX += -1; }
 
 
                 var output = machine.Execute();
@@ -2906,18 +2919,20 @@ namespace ConsoleApp2
                     y = newY;
                     lastDroidLocation = cell;
                 }
-                PrintGrid(cells.Values);
+                if (output == 2)
+                {
+                    PrintGrid(cells.Values);
+                    //return "";
+                }
 
-                //0: The repair droid hit a wall. Its position has not changed.
-                //1: The repair droid has moved one step in the requested direction.
-                //2: The repair droid has moved one step in the requested direction; its new position is the location of the oxygen system.
 
+                if (y == 46545645654)
+                {
+                    PrintGrid(cells.Values);
+                }
             }
 
             return "";
-            //return scores.Max().ToString();
-            //return string.Join("", ballHits.Select(BallHitToString)); // 33 * 273 = 9009
-            // 9009 too low
         }
     }
 }

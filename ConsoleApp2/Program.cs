@@ -3119,10 +3119,17 @@ namespace ConsoleApp2
 
         public static string Day16_Pt2_GetResult(string[] data)
         {
+            int listRepeat = 1;
+            //int listRepeat = 10_000;
             var pattern = new[] { 0, 1, 0, -1 };
             int GetMultiplier(int charIndex, int repeatCount)
             {
-                return pattern[((charIndex + 1) / repeatCount) % 4];
+                var miniIndex = ((charIndex + 1) / repeatCount) % 4;
+                if (miniIndex == 0 || miniIndex == 2) { return 0; }
+                else if (miniIndex == 1) { return 1; }
+                else { return -1; }
+
+                //return pattern[((charIndex + 1) / repeatCount) % 4];
             }
 
             var patterns = new Dictionary<int, int[]>();
@@ -3145,38 +3152,32 @@ namespace ConsoleApp2
                         lst.Add(item);
                     }
                 }
-                return Enumerable.Repeat(lst, 200 * 10_000).SelectMany(x => x).Skip(1);
+                return Enumerable.Repeat(lst, 200 * listRepeat).SelectMany(x => x).Skip(1);
             }
 
             var inputData = data.Single();
             var sb = new StringBuilder();
-            //Enumerable.Range(0, 10_000).ToList().ForEach(x => sb.Append(inputData));
-            //inputData = sb.ToString();
+            Enumerable.Range(0, listRepeat).ToList().ForEach(x => sb.Append(inputData));
+            inputData = sb.ToString();
 
             var input = inputData.Select(ToInt).ToList();
 
-            var stepSum = "";
+            var stepSum = new StringBuilder();
             for (int i = 0; i < 100; i++)
             {
-                Console.WriteLine(i);
-                stepSum = "";
-                for (int j = 1; j <= input.Count; j++)
+                stepSum = new StringBuilder(input.Count * listRepeat);
+                var previous = 0;
+                for (int j = input.Count * listRepeat - 1; j >= 0; j--)
                 {
-                    //var localPattern = GetPattern(j);
-                    var localSum = 0;
-                    for (int k = 0; k < input.Count; k++)
-                    {
-                        var number = input[k];
-                        var patternMultiplier = GetMultiplier(k, j);
-                        localSum += number * patternMultiplier;
-                    }
-                    localSum = Math.Abs(localSum) % 10;
-                    stepSum += localSum;
+                    var number = input[j % input.Count];
+                    var newNumber = (previous + number) % 10;
+                     previous = newNumber;
+                    stepSum.Append(previous);
                 }
-                input = stepSum.Select(ToInt).ToList();
+                input = stepSum.ToString().Reverse().Select(ToInt).ToList();
             }
 
-            return new string(stepSum.Take(8).ToArray());
+            return new string(stepSum.ToString().Reverse().Take(8).ToArray());
         }
 
 

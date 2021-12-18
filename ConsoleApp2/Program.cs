@@ -2631,6 +2631,114 @@ namespace ConsoleApp2
 
             return fuelCreated;
         }// 998537 too high
+
+        public static string Day15_Pt1_GetResult(string[] data)
+        {
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+
+            var cells = new Dictionary<(long x, long y), Cell>();
+            Cell GetOrCreate(long x, long y)
+            {
+                var key = (x, y);
+                if (!cells.ContainsKey(key))
+                {
+                    cells[key] = new Cell() { X = x, Y = y };
+                }
+                return cells[key];
+            }
+
+            void PrintGrid(IEnumerable<Cell> cells)
+            {
+                var minX = cells.Min(x => x.X);
+                var maxX = cells.Max(x => x.X);
+                var minY = cells.Min(x => x.Y);
+                var maxY = cells.Max(x => x.Y);
+
+                Console.Clear();
+                for (long y = minY; y <= maxY; y++)
+                {
+                    for (long x = minX; x <= maxX; x++)
+                    {
+                        var cell = cells.SingleOrDefault(z => z.X == x && z.Y == y);
+                        if (cell != null)
+                        {
+                            Console.Write(cell.ToString());
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+
+            }
+
+            var machine = new StateMachine { inputBuffer = 1, operations = operations };
+            var x = 0;
+            var y = 0;
+            var stopOutput = long.MinValue;
+            var lastDroidLocation = GetOrCreate(0, 0);
+            lastDroidLocation.HasDroid = true;
+            lastDroidLocation.IsStart = true;
+            lastDroidLocation.Value = 1;
+            PrintGrid(cells.Values);
+            var random = new Random();
+            int j = 0;
+            while (true)
+            {
+                j++;
+                if (j % 10000 == 0)
+                {
+                    PrintGrid(cells.Values);
+                }
+                var newX = x;
+                var newY = y;
+                var input = random.Next(1, 5);
+                //if (input.Key == ConsoleKey.UpArrow) { machine.inputBuffer = 1; newY += -1; }
+                //if (input.Key == ConsoleKey.DownArrow) { machine.inputBuffer = 2; newY += 1; }
+                //if (input.Key == ConsoleKey.RightArrow) { machine.inputBuffer = 3; newX += 1; }
+                //if (input.Key == ConsoleKey.LeftArrow) { machine.inputBuffer = 4; newX += -1; }
+                if (input == 1) { machine.inputBuffer = 1; newY += -1; }
+                if (input == 2) { machine.inputBuffer = 2; newY += 1; }
+                if (input == 3) { machine.inputBuffer = 3; newX += 1; }
+                if (input == 4) { machine.inputBuffer = 4; newX += -1; }
+
+
+                var output = machine.Execute();
+                if (output == stopOutput) { throw new Exception(); }
+                var cell = GetOrCreate(newX, newY);
+                cell.Value = output;
+                if (output != 0)
+                {
+                    lastDroidLocation.HasDroid = false;
+                    cell.HasDroid = true;
+                    x = newX;
+                    y = newY;
+                    lastDroidLocation = cell;
+                }
+                if (output == 2)
+                {
+                    PrintGrid(cells.Values);
+                    //return "";
+                }
+
+
+                if (y == 46545645654)
+                {
+                    PrintGrid(cells.Values);
+                }
+            }
+
+            return "";
+        }
+
          */
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
         enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
@@ -2815,9 +2923,13 @@ namespace ConsoleApp2
             public long Value { get; set; }
             public bool HasDroid { get; set; }
             public bool IsStart { get; set; }
+            public bool IsTank { get; set; }
+            public bool IsSpace { get; set; }
+            public bool WasReached { get; set; }
 
             public override string ToString()
             {
+                if (WasReached) { return "x"; }
                 switch (Value)
                 {
                     default: throw new Exception();
@@ -2828,7 +2940,8 @@ namespace ConsoleApp2
             }
         }
 
-        public static string Day15_Pt1_GetResult(string[] data)
+
+        public static string Day15_Pt2_GetResult(string[] data)
         {
             var operations = new Dictionary<long, long>();
             var array = data.Single().Split(",").Select(long.Parse).ToArray();
@@ -2887,12 +3000,11 @@ namespace ConsoleApp2
             PrintGrid(cells.Values);
             var random = new Random();
             int j = 0;
-            while (true)
+            while (j < 2_000_000)
             {
                 j++;
-                if (j % 10000 == 0)
+                if (j % 100000 == 0)
                 {
-                    PrintGrid(cells.Values);
                 }
                 var newX = x;
                 var newY = y;
@@ -2913,6 +3025,8 @@ namespace ConsoleApp2
                 cell.Value = output;
                 if (output != 0)
                 {
+                    cell.IsSpace = output == 1;
+                    cell.IsTank = output == 2;
                     lastDroidLocation.HasDroid = false;
                     cell.HasDroid = true;
                     x = newX;
@@ -2921,7 +3035,7 @@ namespace ConsoleApp2
                 }
                 if (output == 2)
                 {
-                    PrintGrid(cells.Values);
+                    //PrintGrid(cells.Values);
                     //return "";
                 }
 
@@ -2932,7 +3046,32 @@ namespace ConsoleApp2
                 }
             }
 
+            PrintGrid(cells.Values);
+            int k = 0;
+            while (true)
+            {
+                k++;
+                foreach (var item in cells.Values.Where(x => x.WasReached || x.IsTank).ToList())
+                {
+                    cells.TryGetValue((item.X - 1, item.Y), out var left);
+                    cells.TryGetValue((item.X + 1, item.Y), out var right);
+                    cells.TryGetValue((item.X, item.Y - 1), out var up);
+                    cells.TryGetValue((item.X, item.Y + 1), out var down);
+                    if (left.IsSpace) { left.WasReached = true; }
+                    if (right.IsSpace) { right.WasReached = true; }
+                    if (up.IsSpace) { up.WasReached = true; }
+                    if (down.IsSpace) { down.WasReached = true; }
+                }
+                //PrintGrid(cells.Values);
+
+                if (cells.Values.Where(x => x.IsSpace).All(x => x.WasReached))
+                {
+                    return k.ToString();
+                }
+            }
+
             return "";
         }
+
     }
 }

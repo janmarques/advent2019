@@ -3119,65 +3119,46 @@ namespace ConsoleApp2
 
         public static string Day16_Pt2_GetResult(string[] data)
         {
-            int listRepeat = 1;
-            //int listRepeat = 10_000;
-            var pattern = new[] { 0, 1, 0, -1 };
-            int GetMultiplier(int charIndex, int repeatCount)
+            var sb = new StringBuilder();
             {
-                var miniIndex = ((charIndex + 1) / repeatCount) % 4;
-                if (miniIndex == 0 || miniIndex == 2) { return 0; }
-                else if (miniIndex == 1) { return 1; }
-                else { return -1; }
-
-                //return pattern[((charIndex + 1) / repeatCount) % 4];
-            }
-
-            var patterns = new Dictionary<int, int[]>();
-            int[] GetPattern(int repeat)
-            {
-                if (!patterns.ContainsKey(repeat))
+                int listRepeat = 10_000;
+                var inputData = data.Single();
+                var totalLength = inputData.Length * listRepeat;
+                var location = ToInt(new string(inputData.Take(7).ToArray()));
+                var previous = 0;
+                for (int j = totalLength - 1; j >= location; j--)
                 {
-                    patterns.Add(repeat, CreatePattern(repeat).ToArray());
+                    if(j % 100_000 == 0) { Console.WriteLine(j); }
+                    var number = ToInt(inputData[j % inputData.Length]);
+                    var current = (number + previous) % 10;
+                    sb.Insert(0, current);
+                    previous = current;
                 }
-                return patterns[repeat];
+
+                //Console.WriteLine(sb.ToString());
             }
 
-            IEnumerable<int> CreatePattern(int repeat)
             {
-                var lst = new List<int>();
-                foreach (var item in pattern)
+
+                for (int i = 0; i < 99; i++)
                 {
-                    for (int i = 0; i < repeat; i++)
+                    Console.WriteLine(i);
+
+                    var str = sb.ToString();
+                    sb = new StringBuilder();
+                    var previous = 0;
+                    for (int j = str.Length - 1; j >= 0; j--)
                     {
-                        lst.Add(item);
+                    if (j % 100_000 == 0) { Console.WriteLine(j); }
+                        var number = ToInt(str[j]);
+                        var current = (number + previous) % 10;
+                        sb.Insert(0, current);
+                        previous = current;
                     }
                 }
-                return Enumerable.Repeat(lst, 200 * listRepeat).SelectMany(x => x).Skip(1);
             }
 
-            var inputData = data.Single();
-            var sb = new StringBuilder();
-            Enumerable.Range(0, listRepeat).ToList().ForEach(x => sb.Append(inputData));
-            inputData = sb.ToString();
-
-            var input = inputData.Select(ToInt).ToList();
-
-            var stepSum = new StringBuilder();
-            for (int i = 0; i < 100; i++)
-            {
-                stepSum = new StringBuilder(input.Count * listRepeat);
-                var previous = 0;
-                for (int j = input.Count * listRepeat - 1; j >= 0; j--)
-                {
-                    var number = input[j % input.Count];
-                    var newNumber = (previous + number) % 10;
-                     previous = newNumber;
-                    stepSum.Append(previous);
-                }
-                input = stepSum.ToString().Reverse().Select(ToInt).ToList();
-            }
-
-            return new string(stepSum.ToString().Reverse().Take(8).ToArray());
+            return new string(sb.ToString().Take(8).ToArray());
         }
 
 

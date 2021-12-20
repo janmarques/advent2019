@@ -3115,11 +3115,10 @@ namespace ConsoleApp2
 
             return new string(stepSum.Take(8).ToArray());
         }
-         */
 
         public static string Day16_Pt2_GetResult(string[] data)
         {
-            var sb = new StringBuilder();
+            var sb = new List<int>();
             {
                 int listRepeat = 10_000;
                 var inputData = data.Single();
@@ -3128,10 +3127,10 @@ namespace ConsoleApp2
                 var previous = 0;
                 for (int j = totalLength - 1; j >= location; j--)
                 {
-                    if(j % 100_000 == 0) { Console.WriteLine(j); }
+                    if (j % 100_000 == 0) { Console.WriteLine(j); }
                     var number = ToInt(inputData[j % inputData.Length]);
                     var current = (number + previous) % 10;
-                    sb.Insert(0, current);
+                    sb.Add(current);
                     previous = current;
                 }
 
@@ -3143,22 +3142,359 @@ namespace ConsoleApp2
                 for (int i = 0; i < 99; i++)
                 {
                     Console.WriteLine(i);
+                    sb.Reverse();
 
-                    var str = sb.ToString();
-                    sb = new StringBuilder();
+                    var str = sb.ToList();
+                    sb = new List<int>();
                     var previous = 0;
-                    for (int j = str.Length - 1; j >= 0; j--)
+                    for (int j = str.Count - 1; j >= 0; j--)
                     {
-                    if (j % 100_000 == 0) { Console.WriteLine(j); }
-                        var number = ToInt(str[j]);
+                        if (j % 100_000 == 0) { Console.WriteLine(j); }
+                        var number = str.ElementAt(j);
                         var current = (number + previous) % 10;
-                        sb.Insert(0, current);
+                        sb.Add(current);
                         previous = current;
                     }
                 }
             }
+            sb.Reverse();
 
-            return new string(sb.ToString().Take(8).ToArray());
+            return new string(String.Join("", sb.Take(8)).ToArray());
+        }
+
+        public static string Day17_Pt1_GetResult(string[] data)
+        {
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+
+            var cells = new Dictionary<(long x, long y), Cell>();
+            Cell GetOrCreate(long x, long y)
+            {
+                var key = (x, y);
+                if (!cells.ContainsKey(key))
+                {
+                    cells[key] = new Cell() { X = x, Y = y };
+                }
+                return cells[key];
+            }
+
+            void PrintGrid(IEnumerable<Cell> cells)
+            {
+                var minX = cells.Min(x => x.X);
+                var maxX = cells.Max(x => x.X);
+                var minY = cells.Min(x => x.Y);
+                var maxY = cells.Max(x => x.Y);
+
+                Console.Clear();
+                for (long y = minY; y <= maxY; y++)
+                {
+                    for (long x = minX; x <= maxX; x++)
+                    {
+                        var cell = cells.SingleOrDefault(z => z.X == x && z.Y == y);
+                        if (cell != null)
+                        {
+                            Console.Write(cell.ToString());
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+
+            }
+
+            var machine = new StateMachine { inputBuffer = 1, operations = operations };
+            var stopOutput = long.MinValue;
+            var str = "";
+            while (true)
+            {
+                var output = machine.Execute();
+                if (output == stopOutput) { break; }
+                str += (char)output;
+
+            }
+
+            var split = str.Split((char)10).Select(x => x.ToCharArray()).TakeWhile(x => x.Any()).ToArray();
+            var found = new List<(int x, int y)>();
+            for (int x = 1; x < split.Length - 1; x++)
+            {
+                for (int y = 1; y < split[x].Length - 1; y++)
+                {
+                    var up = split[x + 1][y];
+                    var down = split[x - 1][y];
+                    var left = split[x][y + 1];
+                    var right = split[x][y - 1];
+                    var me = split[x][y];
+
+                    if (up == '#' && down == '#' && left == '#' && right == '#' && me == '#')
+                    {
+                        found.Add((x, y));
+                    }
+                }
+            }
+
+            Console.Write(str);
+
+            var sum = found.Sum(o => o.x*o.y);
+
+            return sum.ToString();
+        }
+
+         */
+
+
+        enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
+        enum ParameterMode { Position = 0, Value = 1, Relative = 2 }
+        class StateMachine
+        {
+            private ParameterMode GetParameterMode(char v) => (ParameterMode)ToInt(v);
+            (ParameterMode parameterMode1, ParameterMode parameterMode2, ParameterMode parameterMode3, OpCode opCode) GetOpcode(long input)
+            {
+                var inputString = input.ToString();
+                var opCode = (OpCode)ToInt(new string(inputString.TakeLast(2).ToArray()));
+                var parameterMode1 = ParameterMode.Position;
+                var parameterMode2 = ParameterMode.Position;
+                var parameterMode3 = ParameterMode.Position;
+                if (inputString.Length == 3)
+                {
+                    parameterMode1 = GetParameterMode(inputString[0]);
+                }
+                else if (inputString.Length == 4)
+                {
+                    parameterMode2 = GetParameterMode(inputString[0]);
+                    parameterMode1 = GetParameterMode(inputString[1]);
+                }
+                else if (inputString.Length == 5)
+                {
+                    parameterMode3 = GetParameterMode(inputString[0]);
+                    parameterMode2 = GetParameterMode(inputString[1]);
+                    parameterMode1 = GetParameterMode(inputString[2]);
+                }
+                return (parameterMode1, parameterMode2, parameterMode3, opCode);
+            }
+
+            public Queue<long> inputBuffer { get; set; } =  new Queue<long>();
+            public List<long> outputBuffer { get; set; } = new List<long>();
+            public long i { get; set; }
+            public long relativeBase { get; set; }
+            public Dictionary<long, long> operations { get; set; }
+
+            long GetOrDefault(long address)
+            {
+                if (operations.TryGetValue(address, out var result))
+                {
+                    return result;
+                }
+                return 0;
+            }
+            long Get(ParameterMode mode, long address)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: return GetOrDefault(GetOrDefault(address));
+                    case ParameterMode.Value: return GetOrDefault(address);
+                    case ParameterMode.Relative: return GetOrDefault(relativeBase + GetOrDefault(address));
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            void Set(ParameterMode mode, long address, long value)
+            {
+                switch (mode)
+                {
+                    case ParameterMode.Position: operations[GetOrDefault(address)] = value; break;
+                    case ParameterMode.Value: operations[address] = value; break;
+                    case ParameterMode.Relative: operations[relativeBase + GetOrDefault(address)] = value; break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            private bool first = true;
+            public long Execute()
+            {
+                while (true)
+                {
+                    var opCode = GetOpcode(operations[i]);
+                    switch (opCode.opCode)
+                    {
+                        case OpCode.Stop:
+                            {
+                                //return operations[0];
+                                //throw new InvalidOperationException();
+                                return long.MinValue;
+                            }
+                        case OpCode.Add:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 + param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Multiply:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 * param2;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Input:
+                            {
+                                //Set(opCode.parameterMode1, i + 1, first ? 2 : inputBuffer);
+                                Set(opCode.parameterMode1, i + 1, inputBuffer.Dequeue());
+                                first = false;
+                                i += 2;
+                            }
+                            break;
+                        case OpCode.Output:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                outputBuffer.Add(param1);
+                                i += 2;
+                                return param1;
+                            }
+                            break;
+                        case OpCode.JumpIfTrue:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 != 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.JumpIfFalse:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                if (param1 == 0)
+                                {
+                                    i = param2;
+                                }
+                                else
+                                {
+                                    i += 3;
+                                }
+                            }
+                            break;
+                        case OpCode.LessThan:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 < param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.Equals:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                var param2 = Get(opCode.parameterMode2, i + 2);
+                                var value = param1 == param2 ? 1 : 0;
+                                Set(opCode.parameterMode3, i + 3, value);
+                                i += 4;
+                            }
+                            break;
+                        case OpCode.AdjustRelativeBase:
+                            {
+                                var param1 = Get(opCode.parameterMode1, i + 1);
+                                relativeBase += param1;
+                                i += 2;
+                            }
+                            break;
+                        default:
+                            {
+                                throw new Exception();
+                            }
+                    }
+                }
+            }
+        }
+        public static string Day17_Pt2_GetResult(string[] data)
+        {
+            //var ten = '[';
+            //var twelve = ']';
+            //var main = "C,A,C,B,C,A,B,A,B,A";
+            //var a = "R,8,L,],R,4,R,4";
+            //var b = "R,8,L,[,R,8";
+            //var c = "R,8,L,[,L,],R,4";
+
+            var newLine = (char)10;
+            var main = "C,A,C,B,C,A,B,A,B,A";
+            var a = "R,8,L,12,R,4,R,4";
+            var b = "R,8,L,10,R,8";
+            var c = "R,8,L,10,L,12,R,4";
+            var video = "n";
+            var inputs = new[] { main, a, b, c, video };
+
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            array[0] = 2;
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+            var machine = new StateMachine { operations = operations };
+            var stopOutput = long.MinValue;
+            var str = "";
+
+            foreach (var input in inputs)
+            {
+                foreach (var item in input)
+                {
+                    machine.inputBuffer.Enqueue(item);
+                }
+                machine.inputBuffer.Enqueue(newLine);
+            }
+
+            while (true)
+            {
+                var output = machine.Execute();
+                if (output == stopOutput) { break; }
+                str += (char)output;
+            }
+
+
+
+
+            var split = str.Split((char)10).Select(x => x.ToCharArray()).TakeWhile(x => x.Any()).ToArray();
+            var found = new List<(int x, int y)>();
+            for (int x = 1; x < split.Length - 1; x++)
+            {
+                for (int y = 1; y < split[x].Length - 1; y++)
+                {
+                    var up = split[x + 1][y];
+                    var down = split[x - 1][y];
+                    var left = split[x][y + 1];
+                    var right = split[x][y - 1];
+                    var me = split[x][y];
+
+                    if (up == '#' && down == '#' && left == '#' && right == '#' && me == '#')
+                    {
+                        found.Add((x, y));
+                    }
+                }
+            }
+
+            Console.Write(str);
+
+            return machine.outputBuffer.Last().ToString();
         }
 
 

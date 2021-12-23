@@ -3247,7 +3247,6 @@ namespace ConsoleApp2
             return sum.ToString();
         }
 
-         */
 
 
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
@@ -3470,9 +3469,6 @@ namespace ConsoleApp2
                 str += (char)output;
             }
 
-
-
-
             var split = str.Split((char)10).Select(x => x.ToCharArray()).TakeWhile(x => x.Any()).ToArray();
             var found = new List<(int x, int y)>();
             for (int x = 1; x < split.Length - 1; x++)
@@ -3495,6 +3491,138 @@ namespace ConsoleApp2
             Console.Write(str);
 
             return machine.outputBuffer.Last().ToString();
+        }
+         */
+
+
+        public static long Day18_Pt1_GetResult(string[] data)
+        {
+            void PrintGrid(Dictionary<(int x, int y), Cell> cells)
+            {
+                for (int y = 0; y < data.Length; y++)
+                {
+                    for (int x = 0; x < data.First().Length; x++)
+                    {
+                        if (cells.TryGetValue((x, y), out var result))
+                        {
+                            Console.Write(result.Value);
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
+
+            var dct = new Dictionary<(int x, int y), Cell>();
+            for (int y = 0; y < data.Length; y++)
+            {
+                for (int x = 0; x < data.First().Length; x++)
+                {
+                    var value = data[y][x];
+                    if (value != '#')
+                    {
+                        var cell = new Cell { X = x, Y = y, Value = value };
+                        dct.Add((x, y), cell);
+                    }
+                };
+            }
+
+            PrintGrid(dct);
+            foreach (var cell in dct.Values)
+            {
+                dct.TryGetValue((cell.X, cell.Y - 1), out var up);
+                dct.TryGetValue((cell.X, cell.Y + 1), out var down);
+                dct.TryGetValue((cell.X - 1, cell.Y), out var right);
+                dct.TryGetValue((cell.X + 1, cell.Y), out var left);
+                cell.Up = up;
+                cell.Down = down;
+                cell.Left = left;
+                cell.Right = right;
+            }
+
+
+            var visited = new HashSet<(string cell, string keys)>();
+            var keysCount = dct.Values.Select(x => x.Value).Where(x => char.IsLower(x)).Count();
+            var origin = dct.Single(x => x.Value.Value == '@').Value;
+
+            var unvisited = dct.Values.ToList();
+            var tentativeDistance = unvisited.ToDictionary(x => (cell: x, keys: ""), x => int.MaxValue);
+            var nonInfiniteTentativeDistance = new Dictionary<(Cell cell, string keys), int>();
+            var startState = (cell: origin, keys: "");
+            tentativeDistance[startState] = 0;
+            var current = startState;
+            while (true)
+            {
+                //Console.WriteLine($"{dct.Values.Count(x => x.Visited)} / {dct.Values.Count}");
+                var currentTentativeDistance = tentativeDistance[current];
+                foreach (var neighbour in current.cell.GetAllDirections())
+                {
+                    var keys = current.keys;
+                    if (visited.Contains((neighbour.ToString(), keys))) { continue; }
+
+                    if (char.IsLower(neighbour.Value) && !keys.Contains(neighbour.Value))
+                    {
+                        keys += neighbour.Value;
+                    }
+                    else if (char.IsUpper(neighbour.Value))
+                    {
+                        if (!keys.Contains(neighbour.Value.ToString().ToLower()))
+                        {
+                            continue;
+                        }
+                    }
+                    var distance = currentTentativeDistance + 1;
+                    var newDctKey = (neighbour, keys);
+                    if (tentativeDistance.ContainsKey(newDctKey))
+                    {
+                        tentativeDistance[newDctKey] = Math.Min(tentativeDistance[newDctKey], distance);
+                    }
+                    else
+                    {
+                        tentativeDistance[newDctKey] = distance;
+                    }
+                    nonInfiniteTentativeDistance[newDctKey] = tentativeDistance[newDctKey];
+                }
+                visited.Add((current.cell.ToString(), current.keys));
+                tentativeDistance.Remove((current.cell, current.keys));
+                nonInfiniteTentativeDistance.Remove((current.cell, current.keys));
+                var newCurrent = nonInfiniteTentativeDistance.OrderBy(x => x.Value).FirstOrDefault();
+                current = newCurrent.Key;
+                if (newCurrent.Key.cell == null) { break; }
+                if (newCurrent.Value == int.MaxValue) { break; }
+                if (newCurrent.Key.keys.Count() == keysCount) { break; }
+
+            }
+
+            return tentativeDistance[current];
+        }
+
+        class Cell
+        {
+            public char Value { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
+            public bool Visited { get; set; }
+
+            public override string ToString()
+            {
+                return $"{X},{Y} ({Value})";
+            }
+            public Cell Up { get; set; }
+            public Cell Down { get; set; }
+            public Cell Left { get; set; }
+            public Cell Right { get; set; }
+            public IEnumerable<Cell> GetAllDirections()
+            {
+                if (Down != null) { yield return Down; }
+                if (Right != null) { yield return Right; }
+                if (Left != null) { yield return Left; }
+                if (Up != null) { yield return Up; }
+            }
         }
 
 

@@ -3492,45 +3492,6 @@ namespace ConsoleApp2
 
             return machine.outputBuffer.Last().ToString();
         }
-         */
-
-        static void SetDistancesToInterestingPoints(Cell source, IEnumerable<Cell> others)
-        {
-            var visited = new HashSet<string>();
-
-            var tentativeDistance = new Dictionary<Cell, int>();
-            tentativeDistance[source] = 0;
-            var current = source;
-            while (true)
-            {
-                var currentTentativeDistance = tentativeDistance[current];
-                if (!char.IsUpper(current.Value) || current.Value == source.Value)
-                {
-                    foreach (var neighbour in current.GetAllDirections())
-                    {
-                        var distance = currentTentativeDistance + 1;
-                        if (tentativeDistance.ContainsKey(neighbour))
-                        {
-
-                            tentativeDistance[neighbour] = Math.Min(tentativeDistance[neighbour], distance);
-                        }
-                        else
-                        {
-                            tentativeDistance[neighbour] = distance;
-                        }
-                    }
-                }
-                visited.Add(current.ToString());
-                var newCurrent = tentativeDistance.Where(x => !visited.Contains(x.Key.ToString())).OrderBy(x => x.Value).FirstOrDefault();
-                current = newCurrent.Key;
-                if (current == null) { break; }
-                if (newCurrent.Value == int.MaxValue) { break; }
-            }
-
-            source.Neighbourgs = tentativeDistance.Where(x => x.Key != source && x.Key.Value != '.' && x.Key.Value != '@').Select(x => (x.Key, x.Value)).ToList();
-        }
-
-
         public static long Day18_Pt1_GetResult(string[] data)
         {
             void PrintGrid(Dictionary<(int x, int y), Cell> cells)
@@ -3655,6 +3616,193 @@ namespace ConsoleApp2
                 var newCurrent = nonInfiniteTentativeDistance.OrderBy(x => x.Value).ThenByDescending(x => x.Key.keys.Count()).FirstOrDefault();
                 current = newCurrent.Key;
                 if (newCurrent.Key.cell == null) { break; }
+                if (newCurrent.Value == int.MaxValue) { break; }
+                if (newCurrent.Key.keys.Count() == keysCount) { break; }
+
+            }
+
+            return tentativeDistance[current];
+        }
+
+         */
+
+        static void SetDistancesToInterestingPoints(Cell source, IEnumerable<Cell> others)
+        {
+            var visited = new HashSet<string>();
+
+            var tentativeDistance = new Dictionary<Cell, int>();
+            tentativeDistance[source] = 0;
+            var current = source;
+            while (true)
+            {
+                var currentTentativeDistance = tentativeDistance[current];
+                if (!char.IsUpper(current.Value) || current.Value == source.Value)
+                {
+                    foreach (var neighbour in current.GetAllDirections())
+                    {
+                        var distance = currentTentativeDistance + 1;
+                        if (tentativeDistance.ContainsKey(neighbour))
+                        {
+
+                            tentativeDistance[neighbour] = Math.Min(tentativeDistance[neighbour], distance);
+                        }
+                        else
+                        {
+                            tentativeDistance[neighbour] = distance;
+                        }
+                    }
+                }
+                visited.Add(current.ToString());
+                var newCurrent = tentativeDistance.Where(x => !visited.Contains(x.Key.ToString())).OrderBy(x => x.Value).FirstOrDefault();
+                current = newCurrent.Key;
+                if (current == null) { break; }
+                if (newCurrent.Value == int.MaxValue) { break; }
+            }
+
+            source.Neighbourgs = tentativeDistance.Where(x => x.Key != source && x.Key.Value != '.' && x.Key.Value != '@').Select(x => (x.Key, x.Value)).ToList();
+        }
+
+
+
+        public static long Day18_Pt2_GetResult(string[] data)
+        {
+            void PrintGrid(Dictionary<(int x, int y), Cell> cells)
+            {
+                for (int y = 0; y < data.Length; y++)
+                {
+                    for (int x = 0; x < data.First().Length; x++)
+                    {
+                        if (cells.TryGetValue((x, y), out var result))
+                        {
+                            Console.Write(result.Value);
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
+
+            var dct = new Dictionary<(int x, int y), Cell>();
+            for (int y = 0; y < data.Length; y++)
+            {
+                for (int x = 0; x < data.First().Length; x++)
+                {
+                    var value = data[y][x];
+                    if (value != '#')
+                    {
+                        var cell = new Cell { X = x, Y = y, Value = value };
+                        dct.Add((x, y), cell);
+                    }
+                };
+            }
+
+            PrintGrid(dct);
+            foreach (var cell in dct.Values)
+            {
+                dct.TryGetValue((cell.X, cell.Y - 1), out var up);
+                dct.TryGetValue((cell.X, cell.Y + 1), out var down);
+                dct.TryGetValue((cell.X - 1, cell.Y), out var right);
+                dct.TryGetValue((cell.X + 1, cell.Y), out var left);
+                cell.Up = up;
+                cell.Down = down;
+                cell.Left = left;
+                cell.Right = right;
+            }
+
+            foreach (var item in dct.Values.Where(x => x.Value != '.'))
+            {
+                SetDistancesToInterestingPoints(item, dct.Values);
+            }
+
+            string GetHash((Cell r1, Cell r2, Cell r3, Cell r4, string keys) x) => $"{x.r1.X},{x.r1.Y}:{x.r2.X},{x.r2.Y}:{x.r3.X},{x.r3.Y}:{x.r4.X},{x.r4.Y}:{x.keys}";
+            string GetAlphabeticHash((Cell r1, Cell r2, Cell r3, Cell r4, string keys) x) => $"{x.r1.X},{x.r1.Y}:{x.r2.X},{x.r2.Y}:{x.r3.X},{x.r3.Y}:{x.r4.X},{x.r4.Y}:{new string(x.keys.OrderBy(x => x).ToArray())}";
+            //string GetAlphabeticHash((Cell r1, string keys) x) => $"{x.r1.X},{x.r1.Y}:{new string(x.keys.OrderBy(x => x).ToArray())}";
+
+            var alphabeticKeysVisited = new Dictionary<string, int>();
+            var visited = new HashSet<string>();
+            var keysCount = dct.Values.Select(x => x.Value).Where(x => char.IsLower(x)).Count();
+            var robot1 = dct.Single(x => x.Value.Value == '1').Value;
+            var robot2 = dct.Single(x => x.Value.Value == '2').Value;
+            var robot3 = dct.Single(x => x.Value.Value == '3').Value;
+            var robot4 = dct.Single(x => x.Value.Value == '4').Value;
+            var robots = new[] { robot1, robot2, robot3, robot4 };
+
+            var tentativeDistance = new Dictionary<(Cell r1, Cell r2, Cell r3, Cell r4, string keys), int>();
+            var nonInfiniteTentativeDistance = new Dictionary<(Cell r1, Cell r2, Cell r3, Cell r4, string keys), int>();
+            var startState = (currentR1: robot1, currentR2: robot2, currentR3: robot3, currentR4: robot4, keys: "");
+            tentativeDistance[startState] = 0;
+            var current = startState;
+            while (true)
+            {
+                //Console.WriteLine($"{dct.Values.Count(x => x.Visited)} / {dct.Values.Count}");
+                var currentTentativeDistance = tentativeDistance[current];
+                foreach (var robot in new[] { current.currentR1, current.currentR2, current.currentR3, current.currentR4 })
+                {
+                    foreach (var neighbour in robot.Neighbourgs)
+                    {
+                        var keys = current.keys;
+
+                        var tmpR1 = robot != current.currentR1 ? current.currentR1 : neighbour.otherCell;
+                        var tmpR2 = robot != current.currentR2 ? current.currentR2 : neighbour.otherCell;
+                        var tmpR3 = robot != current.currentR3 ? current.currentR3 : neighbour.otherCell;
+                        var tmpR4 = robot != current.currentR4 ? current.currentR4 : neighbour.otherCell;
+
+                        var neighbourHash = GetHash((tmpR1, tmpR2, tmpR3, tmpR4, keys));
+                        if (visited.Contains(neighbourHash)) { continue; }
+
+                        if (char.IsLower(neighbour.otherCell.Value))
+                        {
+                            if (keys.Contains(neighbour.otherCell.Value))
+                            {
+                                continue; // dumb to go to key again
+                            }
+                            else
+                            {
+                                keys += neighbour.otherCell.Value;
+
+                            }
+                        }
+                        else if (char.IsUpper(neighbour.otherCell.Value))
+                        {
+                            if (!keys.Contains(neighbour.otherCell.Value.ToString().ToLower()))
+                            {
+                                continue;
+                            }
+                        }
+                        var distance = currentTentativeDistance + neighbour.distance;
+                        var newDctKey = (tmpR1, tmpR2, tmpR3, tmpR4, keys);
+
+                        var alphabeticHash = GetAlphabeticHash((tmpR1, tmpR2, tmpR3, tmpR4, keys));
+                        if (alphabeticKeysVisited.TryGetValue(alphabeticHash, out var result))
+                        {
+                            if (result <= distance) { continue; }
+                        }
+                        alphabeticKeysVisited[alphabeticHash] = distance;
+
+                        if (tentativeDistance.ContainsKey(newDctKey))
+                        {
+                            tentativeDistance[newDctKey] = Math.Min(tentativeDistance[newDctKey], distance);
+                        }
+                        else
+                        {
+                            tentativeDistance[newDctKey] = distance;
+                        }
+                        nonInfiniteTentativeDistance[newDctKey] = tentativeDistance[newDctKey];
+                    }
+                }
+
+                var currentHash = GetHash(current);
+
+                visited.Add(currentHash);
+                tentativeDistance.Remove(current);
+                nonInfiniteTentativeDistance.Remove(current);
+                var newCurrent = nonInfiniteTentativeDistance.OrderBy(x => x.Value).ThenByDescending(x => x.Key.keys.Count()).FirstOrDefault();
+                current = newCurrent.Key;
+                if (newCurrent.Key.r1 == null || newCurrent.Key.r2 == null || newCurrent.Key.r3 == null || newCurrent.Key.r4 == null) { break; }
                 if (newCurrent.Value == int.MaxValue) { break; }
                 if (newCurrent.Key.keys.Count() == keysCount) { break; }
 

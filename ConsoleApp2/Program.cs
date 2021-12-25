@@ -3919,6 +3919,8 @@ namespace ConsoleApp2
                 while (true)
                 {
                     var opCode = GetOpcode(operations[i]);
+
+                    //Console.WriteLine($"{i}: " + opCode);
                     switch (opCode.opCode)
                     {
                         case OpCode.Stop:
@@ -3960,7 +3962,6 @@ namespace ConsoleApp2
                                 i += 2;
                                 return param1;
                             }
-                            break;
                         //Opcode 5 is jump-if-true: if the first parameter is non-zero, it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
                         case OpCode.JumpIfTrue:
                             {
@@ -4038,11 +4039,13 @@ namespace ConsoleApp2
             {
                 for (int k = 0; k <= 49; k++)
                 {
-                    var machine = new StateMachine { operations = operations };
+                    var machine = new StateMachine { operations = operations.ToDictionary(x => x.Key, x => x.Value) };
                     machine.inputBuffer.Enqueue(j);
                     machine.inputBuffer.Enqueue(k);
                     var result = machine.Execute();
                     results.Add(result);
+                    //Console.Clear();
+                    Console.WriteLine($"{k}/{j}");
                 }
             }
             return results.Count(x => x == 1).ToString(); // 1 fout

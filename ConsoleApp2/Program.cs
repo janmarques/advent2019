@@ -3844,7 +3844,33 @@ namespace ConsoleApp2
             public List<(Cell otherCell, int distance)> Neighbourgs { get; set; }
         }
 
-         */
+              public static string Day19_Pt1_GetResult(string[] data)
+        {
+            var operations = new Dictionary<long, long>();
+            var array = data.Single().Split(",").Select(long.Parse).ToArray();
+            for (long i = 0; i < array.Length; i++)
+            {
+                operations[i] = array[i];
+            }
+
+            var results = new List<long>();
+            for (int j = 0; j <= 49; j++)
+            {
+                for (int k = 0; k <= 49; k++)
+                {
+                    var machine = new StateMachine { operations = operations.ToDictionary(x => x.Key, x => x.Value) };
+                    machine.inputBuffer.Enqueue(j);
+                    machine.inputBuffer.Enqueue(k);
+                    var result = machine.Execute();
+                    results.Add(result);
+                    //Console.Clear();
+                    Console.WriteLine($"{k}/{j}");
+                }
+            }
+            return results.Count(x => x == 1).ToString(); // 1 fout
+        }
+
+        */
 
 
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
@@ -4025,8 +4051,10 @@ namespace ConsoleApp2
                 }
             }
         }
-        public static string Day19_Pt1_GetResult(string[] data)
+
+        public static string Day19_Pt2_GetResult(string[] data)
         {
+            return "";
             var operations = new Dictionary<long, long>();
             var array = data.Single().Split(",").Select(long.Parse).ToArray();
             for (long i = 0; i < array.Length; i++)
@@ -4034,21 +4062,73 @@ namespace ConsoleApp2
                 operations[i] = array[i];
             }
 
-            var results = new List<long>();
-            for (int j = 0; j <= 49; j++)
+            var results = new List<(int x, int y, char value)>();
+            var sb = new StringBuilder(); ;
+            var size = 3000;
+            for (int j = 0; j <= size; j++)
             {
-                for (int k = 0; k <= 49; k++)
+                var wasLit = false;
+                for (int k = 0; k <= size; k++)
                 {
                     var machine = new StateMachine { operations = operations.ToDictionary(x => x.Key, x => x.Value) };
                     machine.inputBuffer.Enqueue(j);
                     machine.inputBuffer.Enqueue(k);
                     var result = machine.Execute();
-                    results.Add(result);
+                    //results.Add((j, k, result == 1 ? '#' : ' '));
+                    var lit = result == 1;
+                    sb.Append(lit ? '#' : ' ');
+                    if (lit) { wasLit = true; }
+                    if (wasLit && !lit) { break; }
                     //Console.Clear();
-                    Console.WriteLine($"{k}/{j}");
+                    //Console.WriteLine($"{k}/{j}");
+                }
+                sb.AppendLine();
+                Console.WriteLine($"{j}/{size}");
+            }
+            using (StreamWriter w = File.AppendText(@"C:\Users\pc2020\Desktop\tst3.txt"))
+            {
+                w.Write(sb.ToString());
+            }
+
+            return "";
+        }
+
+
+
+        public static long Day19_Pt2Bis_GetResult(string[] data)
+        {
+            var lines = File.ReadAllLines(@"C:\Users\pc2020\Desktop\tst3.txt");
+
+            var list = new List<(int y, int x1, int x2)>();
+            int i = 0;
+            foreach (var line in lines)
+            {
+                list.Add((i, line.IndexOf("#"), line.LastIndexOf("#")));
+                i++;
+            }
+
+            var size = 100;
+            //list = list.Where(x => x.x2 - x.x1 >= size).ToList();
+            foreach (var top in list)
+            {
+                var bottom = list.Single(x => x.y == top.y + size - 1);
+                if (top.x1 <= bottom.x1 && bottom.x1 <= top.x2)
+                {
+                    if (bottom.x1 <= top.x2 && top.x2 <= bottom.x2)
+                    {
+                        if (top.x2 - bottom.x1 == size - 1)
+                        {
+                            return bottom.x1 * 10000 + top.y;
+                        }
+                    }
                 }
             }
-            return results.Count(x => x == 1).ToString(); // 1 fout
+            return -1; // 9051045 too low.... 9121054 too low
+            // y/x omgewisseld in wegschrijven -> 10450905
         }
+
     }
 }
+
+905
+    1045

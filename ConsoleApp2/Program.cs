@@ -3720,7 +3720,7 @@ namespace ConsoleApp2
 
             string GetHash((Cell r1, Cell r2, Cell r3, Cell r4, string keys) x) => $"{x.r1.X},{x.r1.Y}:{x.r2.X},{x.r2.Y}:{x.r3.X},{x.r3.Y}:{x.r4.X},{x.r4.Y}:{x.keys}";
             string GetAlphabeticHash((Cell r1, Cell r2, Cell r3, Cell r4, string keys) x) => $"{x.r1.X},{x.r1.Y}:{x.r2.X},{x.r2.Y}:{x.r3.X},{x.r3.Y}:{x.r4.X},{x.r4.Y}:{new string(x.keys.OrderBy(x => x).ToArray())}";
-            //string GetAlphabeticHash((Cell r1, string keys) x) => $"{x.r1.X},{x.r1.Y}:{new string(x.keys.OrderBy(x => x).ToArray())}";
+            string GetAlphabeticHash2((Cell r1, string keys) x) => $"{x.r1.X},{x.r1.Y}:{new string(x.keys.OrderBy(x => x).ToArray())}";
 
             var alphabeticKeysVisited = new Dictionary<string, int>();
             var visited = new HashSet<string>();
@@ -3732,13 +3732,17 @@ namespace ConsoleApp2
             var robots = new[] { robot1, robot2, robot3, robot4 };
 
             var tentativeDistance = new Dictionary<(Cell r1, Cell r2, Cell r3, Cell r4, string keys), int>();
-            var nonInfiniteTentativeDistance = new Dictionary<(Cell r1, Cell r2, Cell r3, Cell r4, string keys), int>();
             var startState = (currentR1: robot1, currentR2: robot2, currentR3: robot3, currentR4: robot4, keys: "");
             tentativeDistance[startState] = 0;
             var current = startState;
+            int i = 0;
             while (true)
             {
-                //Console.WriteLine($"{dct.Values.Count(x => x.Visited)} / {dct.Values.Count}");
+                i++;
+                if (i % 1_000 == 0)
+                {
+                    Console.WriteLine($"{i} Keys {current.keys.Length}/{keysCount}");
+                }
                 var currentTentativeDistance = tentativeDistance[current];
                 foreach (var robot in new[] { current.currentR1, current.currentR2, current.currentR3, current.currentR4 })
                 {
@@ -3773,7 +3777,12 @@ namespace ConsoleApp2
                                 continue;
                             }
                         }
+                        else if (char.IsDigit(neighbour.otherCell.Value))
+                        {
+                            continue; // dumb to go to starting position
+                        }
                         var distance = currentTentativeDistance + neighbour.distance;
+                        if(distance > 2996) { continue; }
                         var newDctKey = (tmpR1, tmpR2, tmpR3, tmpR4, keys);
 
                         var alphabeticHash = GetAlphabeticHash((tmpR1, tmpR2, tmpR3, tmpR4, keys));
@@ -3791,7 +3800,6 @@ namespace ConsoleApp2
                         {
                             tentativeDistance[newDctKey] = distance;
                         }
-                        nonInfiniteTentativeDistance[newDctKey] = tentativeDistance[newDctKey];
                     }
                 }
 
@@ -3799,8 +3807,8 @@ namespace ConsoleApp2
 
                 visited.Add(currentHash);
                 tentativeDistance.Remove(current);
-                nonInfiniteTentativeDistance.Remove(current);
-                var newCurrent = nonInfiniteTentativeDistance.OrderBy(x => x.Value).ThenByDescending(x => x.Key.keys.Count()).FirstOrDefault();
+                var newCurrent = tentativeDistance.OrderBy(x => x.Value).ThenByDescending(x => x.Key.keys.Count()).FirstOrDefault();
+                //var newCurrent = tentativeDistance.OrderByDescending(x => x.Key.keys.Count()).ThenBy(x => x.Value).FirstOrDefault();
                 current = newCurrent.Key;
                 if (newCurrent.Key.r1 == null || newCurrent.Key.r2 == null || newCurrent.Key.r3 == null || newCurrent.Key.r4 == null) { break; }
                 if (newCurrent.Value == int.MaxValue) { break; }

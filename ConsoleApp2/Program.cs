@@ -4125,45 +4125,8 @@ namespace ConsoleApp2
             return -1; // 9051045 too low.... 9121054 too low
             // y/x omgewisseld in wegschrijven -> 10450905
         }
-        */
 
-
-        class Cell
-        {
-            public char Value { get; set; }
-            public int X { get; set; }
-            public int Y { get; set; }
-            public bool Visited { get; set; }
-
-            public override string ToString()
-            {
-                return $"{X},{Y} ({Value})";
-            }
-            public Cell Up { get; set; }
-            public Cell Down { get; set; }
-            public Cell Left { get; set; }
-            public Cell Right { get; set; }
-            public IEnumerable<Cell> GetAllDirections()
-            {
-                if (Down != null) { yield return Down; }
-                if (Right != null) { yield return Right; }
-                if (Left != null) { yield return Left; }
-                if (Up != null) { yield return Up; }
-            }
-
-            public List<(Cell otherCell, int distance)> Neighbourgs { get; set; }
-
-            internal void SetPortal(Cell other)
-            {
-                if (Down != null && char.IsLetter(Down.Value)) { Down = other; }
-                else if (Right != null && char.IsLetter(Right.Value)) { Right = other; }
-                else if (Left != null && char.IsLetter(Left.Value)) { Left = other; }
-                else if (Up != null && char.IsLetter(Up.Value)) { Up = other; }
-                else { throw new NotImplementedException(); }
-            }
-        }
-
-        public static long Day20_Pt1_GetResult(string[] data)
+                public static long Day20_Pt1_GetResult(string[] data)
         {
             void PrintGrid(Dictionary<(int x, int y), Cell> cells)
             {
@@ -4278,6 +4241,192 @@ namespace ConsoleApp2
             }
 
             return tentativeDistance[destination];
+        }
+
+        */
+
+
+        class Cell
+        {
+            public char Value { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
+
+            public override string ToString()
+            {
+                return $"{X},{Y} ({Value})";
+            }
+            public (Cell cell, int depthModifier) Up { get; set; }
+            public (Cell cell, int depthModifier) Down { get; set; }
+            public (Cell cell, int depthModifier) Left { get; set; }
+            public (Cell cell, int depthModifier) Right { get; set; }
+            public IEnumerable<(Cell cell, int depthModifier)> GetAllDirections()
+            {
+                if (Down.cell != null) { yield return Down; }
+                if (Right.cell != null) { yield return Right; }
+                if (Left.cell != null) { yield return Left; }
+                if (Up.cell != null) { yield return Up; }
+            }
+
+            public List<(Cell otherCell, int distance)> Neighbourgs { get; set; }
+
+            internal void SetPortal(Cell other)
+            {
+                if (Down.cell != null && char.IsLetter(Down.cell.Value)) { Down = (other, Down.depthModifier); }
+                else if (Right.cell != null && char.IsLetter(Right.cell.Value)) { Right = (other, Right.depthModifier); }
+                else if (Left.cell != null && char.IsLetter(Left.cell.Value)) { Left = (other, Left.depthModifier); }
+                else if (Up.cell != null && char.IsLetter(Up.cell.Value)) { Up = (other, Up.depthModifier); }
+                else { throw new NotImplementedException(); }
+            }
+        }
+
+        public static long Day20_Pt2_GetResult(string[] data)
+        {
+            void PrintGrid(Dictionary<(int x, int y), Cell> cells)
+            {
+                for (int y = 0; y < data.Length; y++)
+                {
+                    for (int x = 0; x < data.First().Length; x++)
+                    {
+                        if (cells.TryGetValue((x, y), out var result))
+                        {
+                            Console.Write(result.Value);
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
+
+            var dct = new Dictionary<(int x, int y), Cell>();
+            for (int y = 0; y < data.Length; y++)
+            {
+                for (int x = 0; x < data.First().Length; x++)
+                {
+                    var value = data[y][x];
+                    if (value != '#')
+                    {
+                        var cell = new Cell { X = x, Y = y, Value = value };
+                        dct.Add((x, y), cell);
+                    }
+                };
+            }
+
+            PrintGrid(dct);
+            foreach (var cell in dct.Values)
+            {
+                dct.TryGetValue((cell.X, cell.Y - 1), out var up);
+                dct.TryGetValue((cell.X, cell.Y + 1), out var down);
+                dct.TryGetValue((cell.X + 1, cell.Y), out var right);
+                dct.TryGetValue((cell.X - 1, cell.Y), out var left);
+                cell.Up = (up, 0);
+                cell.Down = (down, 0);
+                cell.Left = (left, 0);
+                cell.Right = (right, 0);
+            }
+            var maxX = dct.Max(z => z.Key.x);
+            var maxY = dct.Max(z => z.Key.y);
+            var portals = new Dictionary<string, List<Cell>>();
+            foreach (var cell in dct.Values.Where(x => x.Value == '.'))
+            {
+                string portalKey = null;
+                var outside = false;
+                if (cell.Up.cell != null && char.IsLetter(cell.Up.cell.Value))
+                {
+                    portalKey = $"{cell.Up.cell.Up.cell.Value}{cell.Up.cell.Value}";
+                    outside = cell.Up.cell.Up.cell.Y == 0;
+                    cell.Up = (cell.Up.cell, outside ? -1 : 1);
+                }
+                else if (cell.Left.cell != null && char.IsLetter(cell.Left.cell.Value))
+                {
+                    portalKey = $"{cell.Left.cell.Left.cell.Value}{cell.Left.cell.Value}";
+                    outside = cell.Left.cell.Left.cell.X == 0;
+                    cell.Left = (cell.Left.cell, outside ? -1 : 1);
+                }
+                else if (cell.Right.cell != null && char.IsLetter(cell.Right.cell.Value))
+                {
+                    portalKey = $"{cell.Right.cell.Value}{cell.Right.cell.Right.cell.Value}";
+                    outside = cell.Right.cell.Right.cell.X == maxX;
+                    cell.Right = (cell.Right.cell, outside ? -1 : 1);
+                }
+                else if (cell.Down.cell != null && char.IsLetter(cell.Down.cell.Value))
+                {
+                    portalKey = $"{cell.Down.cell.Value}{cell.Down.cell.Down.cell.Value}";
+                    outside = cell.Down.cell.Down.cell.Y == maxY;
+                    cell.Down = (cell.Down.cell, outside ? -1 : 1);
+                }
+
+                if (portalKey != null)
+                {
+                    if (!portals.ContainsKey(portalKey))
+                    {
+                        portals[portalKey] = new List<Cell>();
+                    }
+                    portals[portalKey].Add(cell);
+                }
+            }
+
+            var origin = portals["AA"].Single();
+            var destination = portals["ZZ"].Single();
+            origin.SetPortal(null);
+            destination.SetPortal(null);
+            foreach (var item in portals.Where(x => x.Key != "AA" && x.Key != "ZZ"))
+            {
+                var one = item.Value[0];
+                var two = item.Value[1];
+                one.SetPortal(two);
+                two.SetPortal(one);
+            }
+
+            var visited = new HashSet<string>();
+            string Hash((Cell cell, int depth) z) => $"{z.depth}:{z.cell.X}:{z.cell.Y}";
+            //var tentativeDistance = dct.Values.ToList().ToDictionary(x => (cell: x, depth: 0), x => int.MaxValue);
+            var tentativeDistance = new Dictionary<(Cell cell, int depth), int>();
+            var current = (cell: origin, depth: 0);
+            tentativeDistance[(origin, 0)] = 0;
+            var target = (cell: destination, depth: 0);
+            var targetHash = Hash(target);
+            while (true)
+            {
+                var visitCount = visited.Count;
+                if (visitCount % 1_000 == 0)
+                {
+                    Console.WriteLine($"{tentativeDistance.Last().Key} {tentativeDistance.Last().Value}");
+                }
+                //Console.WriteLine($"{dct.Values.Count(x => x.Visited)} / {dct.Values.Count}");
+                var currentTentativeDistance = tentativeDistance[current];
+                foreach (var neighbour in current.cell.GetAllDirections())
+                {
+                    var newDepth = current.depth + neighbour.depthModifier;
+                    //if (newDepth < 0 || newDepth > 100) { continue; }
+                    if (newDepth < 0 || newDepth > 30) { continue; }
+                    var localNeighbour = (cell: neighbour.cell, depth: newDepth);
+                    var neighbourHash = Hash(localNeighbour);
+                    if (visited.Contains(neighbourHash)) { continue; }
+                    var distance = currentTentativeDistance + 1;
+                    if (tentativeDistance.ContainsKey(localNeighbour))
+                    {
+                        tentativeDistance[localNeighbour] = Math.Min(tentativeDistance[localNeighbour], distance);
+                    }
+                    else
+                    {
+                        tentativeDistance[localNeighbour] = distance;
+                    }
+                }
+                visited.Add(Hash(current));
+                var newCurrent = tentativeDistance.Where(x => !visited.Contains(Hash(x.Key))).OrderBy(x => x.Value).FirstOrDefault();
+                if (newCurrent.Key.cell == null) { break; }
+                if (newCurrent.Value == int.MaxValue) { break; }
+                if (Hash(newCurrent.Key) == targetHash) { break; }
+                current = newCurrent.Key;
+
+            }
+
+            return tentativeDistance[target];
         }
     }
 }

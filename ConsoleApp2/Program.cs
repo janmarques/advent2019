@@ -4163,7 +4163,7 @@ namespace ConsoleApp2
             }
         }
 
-        public static string Day20_Pt1_GetResult(string[] data)
+        public static long Day20_Pt1_GetResult(string[] data)
         {
             void PrintGrid(Dictionary<(int x, int y), Cell> cells)
             {
@@ -4255,7 +4255,29 @@ namespace ConsoleApp2
             }
 
 
-            return "";
+            var unvisited = dct.Values.ToList();
+            var tentativeDistance = unvisited.ToDictionary(x => x, x => int.MaxValue);
+            tentativeDistance[origin] = 0;
+            var current = origin;
+            while (true)
+            {
+                //Console.WriteLine($"{dct.Values.Count(x => x.Visited)} / {dct.Values.Count}");
+                var currentTentativeDistance = tentativeDistance[current];
+                foreach (var neighbour in current.GetAllDirections().Where(x => !x.Visited))
+                {
+                    var distance = currentTentativeDistance + 1;
+                    tentativeDistance[neighbour] = Math.Min(tentativeDistance[neighbour], distance);
+                }
+                current.Visited = true;
+                var newCurrent = tentativeDistance.Where(x => !x.Key.Visited).OrderBy(x => x.Value).FirstOrDefault();
+                if (newCurrent.Key == null) { break; }
+                if (newCurrent.Value == int.MaxValue) { break; }
+                if (newCurrent.Key == destination) { break; }
+                current = newCurrent.Key;
+
+            }
+
+            return tentativeDistance[destination];
         }
     }
 }

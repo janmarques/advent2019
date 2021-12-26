@@ -3870,7 +3870,6 @@ namespace ConsoleApp2
             return results.Count(x => x == 1).ToString(); // 1 fout
         }
 
-        */
 
 
         enum OpCode { Unknown = 0, Add = 1, Multiply = 2, Input = 3, Output = 4, JumpIfTrue = 5, JumpIfFalse = 6, LessThan = 7, Equals = 8, AdjustRelativeBase = 9, Stop = 99 }
@@ -4126,9 +4125,137 @@ namespace ConsoleApp2
             return -1; // 9051045 too low.... 9121054 too low
             // y/x omgewisseld in wegschrijven -> 10450905
         }
+        */
 
+
+        class Cell
+        {
+            public char Value { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
+            public bool Visited { get; set; }
+
+            public override string ToString()
+            {
+                return $"{X},{Y} ({Value})";
+            }
+            public Cell Up { get; set; }
+            public Cell Down { get; set; }
+            public Cell Left { get; set; }
+            public Cell Right { get; set; }
+            public IEnumerable<Cell> GetAllDirections()
+            {
+                if (Down != null) { yield return Down; }
+                if (Right != null) { yield return Right; }
+                if (Left != null) { yield return Left; }
+                if (Up != null) { yield return Up; }
+            }
+
+            public List<(Cell otherCell, int distance)> Neighbourgs { get; set; }
+
+            internal void SetPortal(Cell other)
+            {
+                if (Down != null && char.IsLetter(Down.Value)) { Down = other; }
+                else if (Right != null && char.IsLetter(Right.Value)) { Right = other; }
+                else if (Left != null && char.IsLetter(Left.Value)) { Left = other; }
+                else if (Up != null && char.IsLetter(Up.Value)) { Up = other; }
+                else { throw new NotImplementedException(); }
+            }
+        }
+
+        public static string Day20_Pt1_GetResult(string[] data)
+        {
+            void PrintGrid(Dictionary<(int x, int y), Cell> cells)
+            {
+                for (int y = 0; y < data.Length; y++)
+                {
+                    for (int x = 0; x < data.First().Length; x++)
+                    {
+                        if (cells.TryGetValue((x, y), out var result))
+                        {
+                            Console.Write(result.Value);
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
+
+            var dct = new Dictionary<(int x, int y), Cell>();
+            for (int y = 0; y < data.Length; y++)
+            {
+                for (int x = 0; x < data.First().Length; x++)
+                {
+                    var value = data[y][x];
+                    if (value != '#')
+                    {
+                        var cell = new Cell { X = x, Y = y, Value = value };
+                        dct.Add((x, y), cell);
+                    }
+                };
+            }
+
+            PrintGrid(dct);
+            foreach (var cell in dct.Values)
+            {
+                dct.TryGetValue((cell.X, cell.Y - 1), out var up);
+                dct.TryGetValue((cell.X, cell.Y + 1), out var down);
+                dct.TryGetValue((cell.X + 1, cell.Y), out var right);
+                dct.TryGetValue((cell.X - 1, cell.Y), out var left);
+                cell.Up = up;
+                cell.Down = down;
+                cell.Left = left;
+                cell.Right = right;
+            }
+            var portals = new Dictionary<string, List<Cell>>();
+            foreach (var cell in dct.Values.Where(x => x.Value == '.'))
+            {
+                string portalKey = null;
+                if (cell.Up != null && char.IsLetter(cell.Up.Value))
+                {
+                    portalKey = $"{cell.Up.Up.Value}{cell.Up.Value}";
+                }
+                else if (cell.Left != null && char.IsLetter(cell.Left.Value))
+                {
+                    portalKey = $"{cell.Left.Left.Value}{cell.Left.Value}";
+                }
+                else if (cell.Right != null && char.IsLetter(cell.Right.Value))
+                {
+                    portalKey = $"{cell.Right.Value}{cell.Right.Right.Value}";
+                }
+                else if (cell.Down != null && char.IsLetter(cell.Down.Value))
+                {
+                    portalKey = $"{cell.Down.Value}{cell.Down.Down.Value}";
+                }
+
+                if (portalKey != null)
+                {
+                    if (!portals.ContainsKey(portalKey))
+                    {
+                        portals[portalKey] = new List<Cell>();
+                    }
+                    portals[portalKey].Add(cell);
+                }
+            }
+
+            var origin = portals["AA"].Single();
+            var destination = portals["ZZ"].Single();
+            origin.SetPortal(null);
+            destination.SetPortal(null);
+            foreach (var item in portals.Where(x => x.Key != "AA" && x.Key != "ZZ"))
+            {
+                var one = item.Value[0];
+                var two = item.Value[1];
+                one.SetPortal(two);
+                two.SetPortal(one);
+            }
+
+
+            return "";
+        }
     }
 }
-
-905
-    1045

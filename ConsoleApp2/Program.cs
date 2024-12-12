@@ -126,9 +126,8 @@ var timer = System.Diagnostics.Stopwatch.StartNew();
 
 var result = 0;
 
-var deck = Enumerable.Range(0, 10007).ToArray();
-var deckHistory = new HashSet<int[]>();
-
+var deckSize = 10007;
+result = 2019;
 
 foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine))
 {
@@ -138,51 +137,28 @@ foreach (var line in input.Replace("deal with increment", "deal").Replace("deal 
 
     if (op == "newStack")
     {
-        deck = deck.Reverse().ToArray();
+        result = NewStack(result);
     }
     else if (op == "cut")
     {
-        if (number > 0)
-        {
-            deck = deck.Skip(number).Concat(deck.Take(number)).ToArray();
-        }
-        else
-        {
-            deck = deck.TakeLast(number * -1).Concat(deck.Take(deck.Length + number)).ToArray();
-        }
+        result = Cut(result, number);
     }
     else
     {
-        var newDeck = new int[deck.Length];
-        int i = 0;
-        foreach (var item in deck)
-        {
-            newDeck[(i * number) % deck.Length] = item;
-            i++;
-        }
-        deck = newDeck;
+        result = Deal(result, number);
     }
-
-    if (deckHistory.Contains(deck))
-    {
-        goto end;
-    }
-    deckHistory.Add(deck);
 }
-end:
 
 
 timer.Stop();
 
-foreach (var item in deck)
-{
-    Console.Write(item.ToString() + " ");
-}
-Console.WriteLine();
 
-result = deck.ToList().IndexOf(2019);
-//result = deck[2019];
+Console.WriteLine();
 
 Console.WriteLine(result);
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
+
+int NewStack(int pos) => (2 * deckSize - 1 - pos) % deckSize;
+int Cut(int pos, int n) => (pos - n + deckSize) % deckSize;
+int Deal(int pos, int n) => (pos * n) % deckSize;

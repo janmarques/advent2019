@@ -106,16 +106,9 @@ deal with increment 66
 cut 3785";
 
 var smallInput =
-@"deal into new stack
-cut -2
-deal with increment 7
-cut 8
-cut -4
-deal with increment 7
-cut 3
-deal with increment 9
-deal with increment 3
-cut -1";
+@"deal with increment 7
+deal into new stack
+deal into new stack";
 
 var smallest = "";
 
@@ -125,11 +118,21 @@ input = fullInput;
 var timer = System.Diagnostics.Stopwatch.StartNew();
 
 var result = 0;
-
 var deckSize = 10007;
-result = 2019;
 
-foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine))
+for (int i = 0; i < 1234; i++)
+{
+    if (NewStackR(NewStack(i)) != i) { throw new Exception(); }
+    if (CutR(Cut(i, 9), 9) != i) { throw new Exception(); }
+    //if (DealR(Deal(i, 9), 9) != i) { throw new Exception(); }
+}
+
+//deckSize = 10;
+//var xx = DealR(1, 3);
+
+result = 6526;
+
+foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse())
 {
     var split = line.Split(' ');
     var op = split[0];
@@ -137,15 +140,15 @@ foreach (var line in input.Replace("deal with increment", "deal").Replace("deal 
 
     if (op == "newStack")
     {
-        result = NewStack(result);
+        result = NewStackR(result);
     }
     else if (op == "cut")
     {
-        result = Cut(result, number);
+        result = CutR(result, number);
     }
     else
     {
-        result = Deal(result, number);
+        result = DealR(result, number);
     }
 }
 
@@ -162,3 +165,7 @@ Console.ReadLine();
 int NewStack(int pos) => (2 * deckSize - 1 - pos) % deckSize;
 int Cut(int pos, int n) => (pos - n + deckSize) % deckSize;
 int Deal(int pos, int n) => (pos * n) % deckSize;
+
+int NewStackR(int pos) => NewStack(pos);
+int CutR(int pos, int n) => Cut(pos, n * -1);
+int DealR(int pos, int n) => (deckSize * n - pos * n) % deckSize;

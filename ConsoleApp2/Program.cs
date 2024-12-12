@@ -119,18 +119,17 @@ input = fullInput;
 //input = smallest;
 var timer = System.Diagnostics.Stopwatch.StartNew();
 
-var result = 0;
-var deckSize = 10007;
+var result = BigInteger.Parse("6526");
+var deckSize = BigInteger.Parse("10007");
 
 
 
-result = 6526;
 
 foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse())
 {
     var split = line.Split(' ');
     var op = split[0];
-    var number = split.Count() == 2 ? int.Parse(split[1]) : -1;
+    var number = split.Count() == 2 ? BigInteger.Parse(split[1]) : new BigInteger(-1);
 
     if (op == "newStack")
     {
@@ -155,11 +154,11 @@ Console.WriteLine(result);
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
 
-int NewStackR(int pos) => (2 * deckSize - 1 - pos) % deckSize;
-int CutR(int pos, int n) => (pos + n + deckSize) % deckSize;
-int DealR(int pos, int increment)
+BigInteger NewStackR(BigInteger pos) => (2 * deckSize - 1 - pos) % deckSize;
+BigInteger CutR(BigInteger pos, BigInteger n) => (pos + n + deckSize) % deckSize;
+BigInteger DealR(BigInteger pos, BigInteger increment)
 {
-    int k = 0;
+    BigInteger k = 0;
     while (true)
     {
         if ((pos + k * deckSize) % increment == 0)
@@ -169,40 +168,3 @@ int DealR(int pos, int increment)
         k++;
     }
 }
-
-// https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Modular_integers
-long InvertMod(int a, int n)
-{
-    long t = 0;
-    long newT = 1;
-    long r = n;
-    long newR = a;
-    while (newR != 0)
-    {
-        var quotient = r / a;
-        (t, newT) = (newT, t - quotient * newT);
-        (r, newR) = (a, r - quotient * newR);
-    }
-    if (t > 1) { throw new Exception(); }
-    return t + n;
-}
-
-// https://stackoverflow.com/questions/7483706/c-sharp-modinverse-function
-int modInverse(int a, int n)
-{
-    int i = n, v = 0, d = 1;
-    while (a > 0)
-    {
-        int t = i / a, x = a;
-        a = i % x;
-        i = x;
-        x = d;
-        d = v - t * x;
-        v = x;
-    }
-    v %= n;
-    if (v < 0) v = (v + n) % n;
-    return v;
-}
-
-int ModInverse2(int a, int n) => ((int)BigInteger.ModPow(new BigInteger(a), new BigInteger(n - 2), new BigInteger(n)));

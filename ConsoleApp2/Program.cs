@@ -106,9 +106,16 @@ deal with increment 66
 cut 3785";
 
 var smallInput =
-@"cut 6
+@"deal into new stack
+cut -2
 deal with increment 7
-deal into new stack";
+cut 8
+cut -4
+deal with increment 7
+cut 3
+deal with increment 9
+deal with increment 3
+cut -1";
 
 var smallest = "";
 
@@ -121,48 +128,46 @@ var result = 0;
 
 var deck = Enumerable.Range(0, 10007).ToArray();
 var deckHistory = new HashSet<int[]>();
-while (true)
+
+
+foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine))
 {
+    var split = line.Split(' ');
+    var op = split[0];
+    var number = split.Count() == 2 ? int.Parse(split[1]) : -1;
 
-    foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine))
+    if (op == "newStack")
     {
-        var split = line.Split(' ');
-        var op = split[0];
-        var number = split.Count() == 2 ? int.Parse(split[1]) : -1;
-
-        if (op == "newStack")
+        deck = deck.Reverse().ToArray();
+    }
+    else if (op == "cut")
+    {
+        if (number > 0)
         {
-            deck = deck.Reverse().ToArray();
-        }
-        else if (op == "cut")
-        {
-            if (number > 0)
-            {
-                deck = deck.Skip(number).Concat(deck.Take(number)).ToArray();
-            }
-            else
-            {
-                deck = deck.TakeLast(number * -1).Concat(deck.Take(deck.Length + number)).ToArray();
-            }
+            deck = deck.Skip(number).Concat(deck.Take(number)).ToArray();
         }
         else
         {
-            var newDeck = new int[deck.Length];
-            int i = 0;
-            foreach (var item in deck)
-            {
-                newDeck[(i * number) % deck.Length] = item;
-                i++;
-            }
-            deck = newDeck;
+            deck = deck.TakeLast(number * -1).Concat(deck.Take(deck.Length + number)).ToArray();
         }
-
-        if (deckHistory.Contains(deck))
-        {
-            goto end;
-        }
-        deckHistory.Add(deck);
     }
+    else
+    {
+        var newDeck = new int[deck.Length];
+        int i = 0;
+        foreach (var item in deck)
+        {
+            newDeck[(i * number) % deck.Length] = item;
+            i++;
+        }
+        deck = newDeck;
+    }
+
+    if (deckHistory.Contains(deck))
+    {
+        goto end;
+    }
+    deckHistory.Add(deck);
 }
 end:
 
@@ -175,20 +180,9 @@ foreach (var item in deck)
 }
 Console.WriteLine();
 
-result = deck[2019];
+result = deck.ToList().IndexOf(2019);
+//result = deck[2019];
 
 Console.WriteLine(result);
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
-
-void PrintGrid<T>(T[][] grid)
-{
-    for (int i = 0; i < grid.Length; i++)
-    {
-        for (int j = 0; j < grid[i].Length; j++)
-        {
-            Console.Write(grid[i][j]);
-        }
-        Console.WriteLine();
-    }
-}

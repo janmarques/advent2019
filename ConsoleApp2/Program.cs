@@ -119,10 +119,8 @@ input = fullInput;
 //input = smallest;
 var timer = System.Diagnostics.Stopwatch.StartNew();
 
-var result = BigInteger.Parse("6526");
-var deckSize = BigInteger.Parse("10007");
-
-
+var result = BigInteger.Parse("2020");
+var deckSize = BigInteger.Parse("119315717514047");
 
 
 foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse())

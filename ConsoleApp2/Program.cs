@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var fullInput =
 @"cut 9374
@@ -120,12 +122,44 @@ var timer = System.Diagnostics.Stopwatch.StartNew();
 var result = 0;
 var deckSize = 10007;
 
-for (int i = 0; i < 1234; i++)
+//for (int i = 0; i < 1234; i++)
+//{
+//    if (NewStackR(NewStack(i)) != i) { throw new Exception(); }
+//    if (CutR(Cut(i, 9), 9) != i) { throw new Exception(); }
+//    if (DealR(Deal(i, 9), 9) != i) { throw new Exception(); }
+//}
+
+
+//Console.WriteLine(ModInverse2(5, 7));
+
+var incccc = new int[] { 0, 7, 4, 1, 8, 5, 2, 9, 6, 3 };
+foreach (var item in incccc)
 {
-    if (NewStackR(NewStack(i)) != i) { throw new Exception(); }
-    if (CutR(Cut(i, 9), 9) != i) { throw new Exception(); }
-    //if (DealR(Deal(i, 9), 9) != i) { throw new Exception(); }
+    Console.WriteLine(XR(item, 10, 3));
 }
+
+for (int z = 0; z < 10; z++)
+{
+    Console.WriteLine(z + " " + ModInverse2(z, 10));
+}
+
+int XR(int pos, int deckSize, int increment)
+{
+    var qqq = ModInverse2(increment, deckSize);
+    return (deckSize * 1000 + pos - qqq * increment) % deckSize;
+}
+
+var a = 3;
+var b = 10;
+var c = 2;
+var d = ModInverse2(a, c);
+var e = ModInverse2(b, c);
+var f = ModInverse2(c, a);
+var g = ModInverse2(c, b);
+var h = ModInverse2(a, b);
+var i = ModInverse2(b, a);
+
+//Console.WriteLine($"{a} {b} {c} {d} {e} {f} {g} {h} {i}");
 
 //deckSize = 10;
 //var xx = DealR(1, 3);
@@ -168,4 +202,41 @@ int Deal(int pos, int n) => (pos * n) % deckSize;
 
 int NewStackR(int pos) => NewStack(pos);
 int CutR(int pos, int n) => Cut(pos, n * -1);
-int DealR(int pos, int n) => (deckSize * n - pos * n) % deckSize;
+int DealR(int pos, int n) => (((pos * -1 * n) % deckSize) + deckSize) % deckSize;
+
+// https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Modular_integers
+long InvertMod(int a, int n)
+{
+    long t = 0;
+    long newT = 1;
+    long r = n;
+    long newR = a;
+    while (newR != 0)
+    {
+        var quotient = r / a;
+        (t, newT) = (newT, t - quotient * newT);
+        (r, newR) = (a, r - quotient * newR);
+    }
+    if (t > 1) { throw new Exception(); }
+    return t + n;
+}
+
+// https://stackoverflow.com/questions/7483706/c-sharp-modinverse-function
+int modInverse(int a, int n)
+{
+    int i = n, v = 0, d = 1;
+    while (a > 0)
+    {
+        int t = i / a, x = a;
+        a = i % x;
+        i = x;
+        x = d;
+        d = v - t * x;
+        v = x;
+    }
+    v %= n;
+    if (v < 0) v = (v + n) % n;
+    return v;
+}
+
+int ModInverse2(int a, int n) => ((int)BigInteger.ModPow(new BigInteger(a), new BigInteger(n - 2), new BigInteger(n)));

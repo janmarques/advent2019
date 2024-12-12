@@ -122,47 +122,7 @@ var timer = System.Diagnostics.Stopwatch.StartNew();
 var result = 0;
 var deckSize = 10007;
 
-//for (int i = 0; i < 1234; i++)
-//{
-//    if (NewStackR(NewStack(i)) != i) { throw new Exception(); }
-//    if (CutR(Cut(i, 9), 9) != i) { throw new Exception(); }
-//    if (DealR(Deal(i, 9), 9) != i) { throw new Exception(); }
-//}
 
-
-//Console.WriteLine(ModInverse2(5, 7));
-
-var incccc = new int[] { 0, 7, 4, 1, 8, 5, 2, 9, 6, 3 };
-foreach (var item in incccc)
-{
-    Console.WriteLine(XR(item, 10, 3));
-}
-
-for (int z = 0; z < 10; z++)
-{
-    Console.WriteLine(z + " " + ModInverse2(z, 10));
-}
-
-int XR(int pos, int deckSize, int increment)
-{
-    var qqq = ModInverse2(increment, deckSize);
-    return (deckSize * 1000 + pos - qqq * increment) % deckSize;
-}
-
-var a = 3;
-var b = 10;
-var c = 2;
-var d = ModInverse2(a, c);
-var e = ModInverse2(b, c);
-var f = ModInverse2(c, a);
-var g = ModInverse2(c, b);
-var h = ModInverse2(a, b);
-var i = ModInverse2(b, a);
-
-//Console.WriteLine($"{a} {b} {c} {d} {e} {f} {g} {h} {i}");
-
-//deckSize = 10;
-//var xx = DealR(1, 3);
 
 result = 6526;
 
@@ -202,7 +162,18 @@ int Deal(int pos, int n) => (pos * n) % deckSize;
 
 int NewStackR(int pos) => NewStack(pos);
 int CutR(int pos, int n) => Cut(pos, n * -1);
-int DealR(int pos, int n) => (((pos * -1 * n) % deckSize) + deckSize) % deckSize;
+int DealR(int pos, int increment)
+{
+    int k = 0;
+    while (true)
+    {
+        if ((pos + k * deckSize) % increment == 0)
+        {
+            return (pos + k * deckSize) / increment;
+        }
+        k++;
+    }
+}
 
 // https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Modular_integers
 long InvertMod(int a, int n)

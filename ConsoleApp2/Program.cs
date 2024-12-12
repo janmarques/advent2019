@@ -149,19 +149,14 @@ foreach (var line in input.Replace("deal with increment", "deal").Replace("deal 
 
 timer.Stop();
 
-
 Console.WriteLine();
 
 Console.WriteLine(result);
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
 
-int NewStack(int pos) => (2 * deckSize - 1 - pos) % deckSize;
-int Cut(int pos, int n) => (pos - n + deckSize) % deckSize;
-int Deal(int pos, int n) => (pos * n) % deckSize;
-
-int NewStackR(int pos) => NewStack(pos);
-int CutR(int pos, int n) => Cut(pos, n * -1);
+int NewStackR(int pos) => (2 * deckSize - 1 - pos) % deckSize;
+int CutR(int pos, int n) => (pos + n + deckSize) % deckSize;
 int DealR(int pos, int increment)
 {
     int k = 0;

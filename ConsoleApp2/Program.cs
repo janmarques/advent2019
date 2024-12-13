@@ -119,18 +119,6 @@ input = fullInput;
 //input = smallest;
 var timer = System.Diagnostics.Stopwatch.StartNew();
 
-var result = BigInteger.Parse("2020");
-var deckSize = BigInteger.Parse("119315717514047");
-var repeats = BigInteger.Parse("101741582076661");
-
-
-result = new BigInteger(2019);
-deckSize = new BigInteger(10007);
-repeats =  new BigInteger(3);
-
-//result = new BigInteger(6526);
-//deckSize = new BigInteger(10007);
-//forward = false;
 
 var input2 = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine);
 
@@ -144,17 +132,21 @@ foreach (var line in input2)
 
     if (op == "newStack")
     {
-        abs.Add(NewStackBreakdown(result));
+        abs.Add(NewStackBreakdown());
     }
     else if (op == "cut")
     {
-        abs.Add(CutBreakdown(result, number));
+        abs.Add(CutBreakdown(number));
     }
     else
     {
-        abs.Add(DealBreakdown(result, number));
+        abs.Add(DealBreakdown(number));
     }
 }
+
+var result = BigInteger.Parse("2020");
+var deckSize = BigInteger.Parse("119315717514047");
+var repeats = BigInteger.Parse("101741582076661");
 
 var state = (abs.First().a, abs.First().b);
 for (int i = 1; i < abs.Count; i++)
@@ -163,7 +155,7 @@ for (int i = 1; i < abs.Count; i++)
     state = Merge(state, ab);
 }
 
-Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
+//Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
 
 var g = (BigInteger.One, BigInteger.Zero);
 var f = state;
@@ -171,16 +163,21 @@ while (repeats > 0)
 {
     if (!repeats.IsEven)
     {
-        g = Merge(g, f);    
+        g = Merge(g, f);
     }
     repeats /= 2;
     f = Merge(f, f);
 }
 state = g;
 
+Console.WriteLine($"({state.a} * X + {state.b}) mod {deckSize} ≡ {result}");
+Console.WriteLine($"({state.a} * X) mod {deckSize} ≡ ({result} - {state.b} + {deckSize}) mod {deckSize}");
+Console.WriteLine($"{state.a} x ≡ {GoodMod(result - state.b, deckSize)} mod {deckSize}");
+
+var search = GoodMod(result - state.b, deckSize);
 Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
 
-(BigInteger, BigInteger) Merge((BigInteger, BigInteger)a, (BigInteger, BigInteger) b)
+(BigInteger, BigInteger) Merge((BigInteger, BigInteger) a, (BigInteger, BigInteger) b)
 {
     return (GoodMod(a.Item1 * b.Item1, deckSize), GoodMod(a.Item2 * b.Item1 + b.Item2, deckSize));
 }
@@ -188,14 +185,13 @@ Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
 timer.Stop();
 
 Console.WriteLine();
-
-Console.WriteLine(result); // 82616125058986 too high
+Console.WriteLine(result); // 79855812422607 correect
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
 
-(BigInteger a, BigInteger b) NewStackBreakdown(BigInteger pos) => (BigInteger.MinusOne, BigInteger.MinusOne);
-(BigInteger a, BigInteger b) CutBreakdown(BigInteger pos, BigInteger n) => (BigInteger.One, -1 * n);
-(BigInteger a, BigInteger b) DealBreakdown(BigInteger pos, BigInteger n) => (n, BigInteger.Zero);
+(BigInteger a, BigInteger b) NewStackBreakdown() => (BigInteger.MinusOne, BigInteger.MinusOne);
+(BigInteger a, BigInteger b) CutBreakdown(BigInteger n) => (BigInteger.One, -1 * n);
+(BigInteger a, BigInteger b) DealBreakdown(BigInteger n) => (n, BigInteger.Zero);
 
 BigInteger GoodMod(BigInteger i, BigInteger m) => ((i % m) + m) % m;
 

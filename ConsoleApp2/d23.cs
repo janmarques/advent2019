@@ -30,7 +30,7 @@ for (long i = 0; i < array.Length; i++)
 }
 
 var pcs = Enumerable.Range(0, pcCount).ToDictionary(x => (long)x, x => new StateMachine { inputBuffer = x, operations = operations });
-var cache = Enumerable.Range(0, pcCount).ToDictionary(x => (long)x, x => new Queue<(long X, long Y, bool state)>(1000000));
+var cache = Enumerable.Range(0, 256).ToDictionary(x => (long)x, x => new Queue<long>(1000000));
 
 foreach (var pc in pcs)
 {
@@ -45,9 +45,14 @@ foreach (var pc in pcs)
     {
         while (true)
         {
-            if (!pc.Value.outputBuffer.Any()) { await Task.Delay(10); continue; }
+            if (pc.Value.outputBuffer.Count < 3) { await Task.Delay(10); continue; }
             var id = pc.Value.outputBuffer.Dequeue();
-            cache[id].Enqueue((X: pc.Value.outputBuffer.Dequeue(), Y: pc.Value.outputBuffer.Dequeue(), false));
+            if(id == 255)
+            {
+                throw new Exception();
+            }
+            cache[id].Enqueue(pc.Value.outputBuffer.Dequeue());
+            cache[id].Enqueue(pc.Value.outputBuffer.Dequeue());
         }
     });
 
@@ -55,24 +60,15 @@ foreach (var pc in pcs)
     {
         while (true)
         {
-            if (pc.Value.inputBuffer == -1 || !cache[pc.Key].Any()) { await Task.Delay(10); continue; }
-            var packet = cache[pc.Key].Peek();
+            if (!(pc.Value.inputBuffer == 0 || pc.Value.inputBuffer == -1) || !cache[pc.Key].Any()) { await Task.Delay(10); continue; }
+            var packet = cache[pc.Key].Dequeue();
             if (packet == default)
             {
                 pc.Value.inputBuffer = -1;
             }
             else
             {
-                if (!packet.state)
-                {
-                    pc.Value.inputBuffer = packet.X;
-                    packet.state = true;
-                }
-                else
-                {
-                    pc.Value.inputBuffer = packet.Y;
-                    cache[pc.Key].Dequeue();
-                }
+                pc.Value.inputBuffer = packet;
             }
         }
     });

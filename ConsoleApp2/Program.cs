@@ -121,12 +121,20 @@ var timer = System.Diagnostics.Stopwatch.StartNew();
 
 var result = BigInteger.Parse("2020");
 var deckSize = BigInteger.Parse("119315717514047");
+var forward = false;
 
-for (int i = 0; i < 2; i++)
+result = new BigInteger(6526);
+deckSize = new BigInteger(10007);
+forward = false;
+//input = smallInput;
+
+var input2 = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse();
+if (forward)
 {
+    input2 = input2.Reverse();
+}
 
-
-foreach (var line in input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse())
+foreach (var line in input2)
 {
     var split = line.Split(' ');
     var op = split[0];
@@ -134,17 +142,16 @@ foreach (var line in input.Replace("deal with increment", "deal").Replace("deal 
 
     if (op == "newStack")
     {
-        result = NewStackR(result);
+        result = forward ? NewStack(result) : NewStackR(result);
     }
     else if (op == "cut")
     {
-        result = CutR(result, number);
+        result = forward ? Cut(result, number) : CutR(result, number);
     }
     else
     {
-        result = DealR(result, number);
+        result = forward ? Deal(result, number) : DealR(result, number);
     }
-}
 }
 
 
@@ -170,3 +177,8 @@ BigInteger DealR(BigInteger pos, BigInteger increment)
         k++;
     }
 }
+
+
+BigInteger NewStack(BigInteger pos) => (2 * deckSize - 1 - pos) % deckSize;
+BigInteger Cut(BigInteger pos, BigInteger n) => (pos - n + deckSize) % deckSize;
+BigInteger Deal(BigInteger pos, BigInteger n) => (pos * n) % deckSize;

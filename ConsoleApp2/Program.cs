@@ -121,21 +121,19 @@ var timer = System.Diagnostics.Stopwatch.StartNew();
 
 var result = BigInteger.Parse("2020");
 var deckSize = BigInteger.Parse("119315717514047");
-var forward = true;
+var repeats = BigInteger.Parse("101741582076661");
 
-//result = new BigInteger(2019);
-//deckSize = new BigInteger(10007);
-//forward = true;
+
+result = new BigInteger(2019);
+deckSize = new BigInteger(10007);
+repeats = BigInteger.Parse("3");
 
 //result = new BigInteger(6526);
 //deckSize = new BigInteger(10007);
 //forward = false;
 
-var input2 = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse();
-if (forward)
-{
-    input2 = input2.Reverse();
-}
+var input2 = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine);
+
 
 var abs = new List<(BigInteger a, BigInteger b)>();
 foreach (var line in input2)
@@ -167,12 +165,31 @@ for (int i = 1; i < abs.Count; i++)
     bNow = GoodMod(bNow * a + b, deckSize);
 }
 
-Console.WriteLine(GoodMod((result - bNow) / aNow, deckSize));
+Console.WriteLine(GoodMod((deckSize - result - bNow) / aNow, deckSize));
 
-var times = 3;
-var ak = BigInteger.Pow(aNow, times);
-var xxx = GoodMod(ak * result + ((bNow * (1 - ak) / (1 - aNow))), deckSize);
-Console.WriteLine(xxx);
+var g = (BigInteger.One, BigInteger.Zero);
+var f = (aNow, bNow);
+while (repeats > 0)
+{
+    if (!repeats.IsEven)
+    {
+        
+    }
+    repeats /= 2;
+    aNow = GoodMod(aNow * aNow, deckSize);
+    bNow = GoodMod(bNow * aNow + bNow, deckSize);
+}
+
+//Console.WriteLine(GoodMod((result - bNow) / aNow, deckSize));
+
+(BigInteger, BigInteger) Merge((BigInteger, BigInteger)a, (BigInteger, BigInteger) b)
+{
+    return (GoodMod(a.Item1 * b.Item1, deckSize), GoodMod(a.Item2 * b.Item1 + b.Item2, deckSize));
+}
+
+//var ak = BigInteger.Pow(aNow, (long)deckSize);
+//var xxx = GoodMod(ak * result + ((bNow * (1 - ak) / (1 - aNow))), deckSize);
+//Console.WriteLine(xxx);
 
 //2019 start, 3 times, shhould be 3221
 //for (int i = 0; i < 3; i++)
@@ -187,7 +204,7 @@ timer.Stop();
 
 Console.WriteLine();
 
-Console.WriteLine(result); // 82616125058986 too high
+//Console.WriteLine(result); // 82616125058986 too high
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
 
@@ -218,3 +235,17 @@ BigInteger Deal(BigInteger pos, BigInteger n) => GoodMod(pos * n, deckSize);
 BigInteger GoodMod(BigInteger i, BigInteger m) => ((i % m) + m) % m;
 
 // https://codeforces.com/blog/entry/72593
+
+
+// https://stackoverflow.com/questions/30224589/biginteger-powbiginteger-biginteger
+static BigInteger Pow(BigInteger a, BigInteger b)
+{
+    BigInteger total = 1;
+    while (b > int.MaxValue)
+    {
+        b -= int.MaxValue;
+        total = total * BigInteger.Pow(a, int.MaxValue);
+    }
+    total = total * BigInteger.Pow(a, (int)b);
+    return total;
+}

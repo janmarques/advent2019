@@ -123,9 +123,9 @@ var result = BigInteger.Parse("2020");
 var deckSize = BigInteger.Parse("119315717514047");
 var forward = true;
 
-result = new BigInteger(2019);
-deckSize = new BigInteger(10007);
-forward = true;
+//result = new BigInteger(2019);
+//deckSize = new BigInteger(10007);
+//forward = true;
 
 //result = new BigInteger(6526);
 //deckSize = new BigInteger(10007);
@@ -167,7 +167,7 @@ for (int i = 1; i < abs.Count; i++)
     bNow = GoodMod(bNow * a + b, deckSize);
 }
 
-Console.WriteLine(GoodMod(aNow * result + bNow, deckSize));
+Console.WriteLine(GoodMod((result - bNow) / aNow, deckSize));
 
 var times = 3;
 var ak = BigInteger.Pow(aNow, times);
@@ -187,7 +187,7 @@ timer.Stop();
 
 Console.WriteLine();
 
-Console.WriteLine(result);
+Console.WriteLine(result); // 82616125058986 too high
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
 

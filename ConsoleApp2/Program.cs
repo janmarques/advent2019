@@ -137,7 +137,7 @@ if (forward)
     input2 = input2.Reverse();
 }
 
-
+var abs = new List<(BigInteger a, BigInteger b)>();
 foreach (var line in input2)
 {
     var split = line.Split(' ');
@@ -146,17 +146,28 @@ foreach (var line in input2)
 
     if (op == "newStack")
     {
-        result = forward ? NewStack(result) : NewStackR(result);
+        abs.Add(NewStackBreakdown(result));
     }
     else if (op == "cut")
     {
-        result = forward ? Cut(result, number) : CutR(result, number);
+        abs.Add(CutBreakdown(result, number));
     }
     else
     {
-        result = forward ? Deal(result, number) : DealR(result, number);
+        abs.Add(DealBreakdown(result, number));
     }
 }
+
+BigInteger aNow = abs.First().a;
+BigInteger bNow = abs.First().b;
+for (int i = 1; i < abs.Count; i++)
+{
+    var (a, b) = abs.ElementAt(i);
+    aNow = GoodMod(aNow * a, deckSize);
+    bNow = GoodMod(bNow * a + b, deckSize);
+}
+
+result = GoodMod(aNow * result + bNow, deckSize);
 Console.WriteLine(result);
 
 
@@ -185,8 +196,8 @@ BigInteger DealR(BigInteger pos, BigInteger increment)
 
 
 (BigInteger a, BigInteger b) NewStackBreakdown(BigInteger pos) => (BigInteger.MinusOne, BigInteger.MinusOne);
-(BigInteger a, BigInteger b) CutBreakdown(BigInteger pos, BigInteger n) => (pos, -1 * n);
-(BigInteger a, BigInteger b) DealBreakdown(BigInteger pos, BigInteger n) => (pos, BigInteger.Zero);
+(BigInteger a, BigInteger b) CutBreakdown(BigInteger pos, BigInteger n) => (BigInteger.One, -1 * n);
+(BigInteger a, BigInteger b) DealBreakdown(BigInteger pos, BigInteger n) => (n, BigInteger.Zero);
 
 BigInteger NewStack(BigInteger pos) => GoodMod(-1 * pos - 1, deckSize);
 BigInteger Cut(BigInteger pos, BigInteger n) => GoodMod(pos - n, deckSize);

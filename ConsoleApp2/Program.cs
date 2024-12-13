@@ -124,9 +124,9 @@ var deckSize = BigInteger.Parse("119315717514047");
 var repeats = BigInteger.Parse("101741582076661");
 
 
-result = new BigInteger(2019);
-deckSize = new BigInteger(10007);
-repeats = BigInteger.Parse("3");
+//result = new BigInteger(2019);
+//deckSize = new BigInteger(10007);
+//repeats = BigInteger.Parse("3");
 
 //result = new BigInteger(6526);
 //deckSize = new BigInteger(10007);
@@ -161,26 +161,24 @@ for (int i = 1; i < abs.Count; i++)
 {
     var ab = abs.ElementAt(i);
     state = Merge(state, ab);
-
-    //Console.WriteLine($"{i} {}");
-
 }
 
 Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
-//Console.WriteLine(GoodMod((deckSize - result - bNow) / aNow, deckSize));
 
-//var g = (BigInteger.One, BigInteger.Zero);
-//var f = (aNow, bNow);
-//while (repeats > 0)
-//{
-//    if (!repeats.IsEven)
-//    {
-        
-//    }
-//    repeats /= 2;
-//    aNow = GoodMod(aNow * aNow, deckSize);
-//    bNow = GoodMod(bNow * aNow + bNow, deckSize);
-//}
+var g = (BigInteger.One, BigInteger.Zero);
+var f = state;
+while (repeats > 0)
+{
+    if (!repeats.IsEven)
+    {
+        g = Merge(g, f);    
+    }
+    repeats /= 2;
+    f = Merge(f, f);
+}
+state = g;
+
+Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
 
 //Console.WriteLine(GoodMod((result - bNow) / aNow, deckSize));
 

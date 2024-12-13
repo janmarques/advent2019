@@ -189,48 +189,14 @@ timer.Stop();
 
 Console.WriteLine();
 
-//Console.WriteLine(result); // 82616125058986 too high
+Console.WriteLine(result); // 82616125058986 too high
 Console.WriteLine(timer.ElapsedMilliseconds + "ms");
 Console.ReadLine();
-
-BigInteger NewStackR(BigInteger pos) => (2 * deckSize - 1 - pos) % deckSize;
-BigInteger CutR(BigInteger pos, BigInteger n) => (pos + n + deckSize) % deckSize;
-BigInteger DealR(BigInteger pos, BigInteger increment)
-{
-    BigInteger k = 0;
-    while (true)
-    {
-        if ((pos + k * deckSize) % increment == 0)
-        {
-            return (pos + k * deckSize) / increment;
-        }
-        k++;
-    }
-}
-
 
 (BigInteger a, BigInteger b) NewStackBreakdown(BigInteger pos) => (BigInteger.MinusOne, BigInteger.MinusOne);
 (BigInteger a, BigInteger b) CutBreakdown(BigInteger pos, BigInteger n) => (BigInteger.One, -1 * n);
 (BigInteger a, BigInteger b) DealBreakdown(BigInteger pos, BigInteger n) => (n, BigInteger.Zero);
 
-BigInteger NewStack(BigInteger pos) => GoodMod(-1 * pos - 1, deckSize);
-BigInteger Cut(BigInteger pos, BigInteger n) => GoodMod(pos - n, deckSize);
-BigInteger Deal(BigInteger pos, BigInteger n) => GoodMod(pos * n, deckSize);
-
 BigInteger GoodMod(BigInteger i, BigInteger m) => ((i % m) + m) % m;
 
 // https://codeforces.com/blog/entry/72593
-
-
-// https://stackoverflow.com/questions/30224589/biginteger-powbiginteger-biginteger
-static BigInteger Pow(BigInteger a, BigInteger b)
-{
-    BigInteger total = 1;
-    while (b > int.MaxValue)
-    {
-        b -= int.MaxValue;
-        total = total * BigInteger.Pow(a, int.MaxValue);
-    }
-    total = total * BigInteger.Pow(a, (int)b);
-    return total;
-}

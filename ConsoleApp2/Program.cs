@@ -138,30 +138,26 @@ if (forward)
 }
 
 
-for (int i = 0; i < 1; i++)
+foreach (var line in input2)
 {
+    var split = line.Split(' ');
+    var op = split[0];
+    var number = split.Count() == 2 ? BigInteger.Parse(split[1]) : new BigInteger(-1);
 
-    foreach (var line in input2)
+    if (op == "newStack")
     {
-        var split = line.Split(' ');
-        var op = split[0];
-        var number = split.Count() == 2 ? BigInteger.Parse(split[1]) : new BigInteger(-1);
-
-        if (op == "newStack")
-        {
-            result = forward ? NewStack(result) : NewStackR(result);
-        }
-        else if (op == "cut")
-        {
-            result = forward ? Cut(result, number) : CutR(result, number);
-        }
-        else
-        {
-            result = forward ? Deal(result, number) : DealR(result, number);
-        }
+        result = forward ? NewStack(result) : NewStackR(result);
     }
-    Console.WriteLine(result);
+    else if (op == "cut")
+    {
+        result = forward ? Cut(result, number) : CutR(result, number);
+    }
+    else
+    {
+        result = forward ? Deal(result, number) : DealR(result, number);
+    }
 }
+Console.WriteLine(result);
 
 
 timer.Stop();
@@ -188,8 +184,14 @@ BigInteger DealR(BigInteger pos, BigInteger increment)
 }
 
 
-BigInteger NewStack(BigInteger pos) => GoodMod((-1 * pos - 1), deckSize);
-BigInteger Cut(BigInteger pos, BigInteger n) => GoodMod((pos - n), deckSize);
-BigInteger Deal(BigInteger pos, BigInteger n) => GoodMod((pos * n), deckSize);
+(BigInteger a, BigInteger b) NewStackBreakdown(BigInteger pos) => (BigInteger.MinusOne, BigInteger.MinusOne);
+(BigInteger a, BigInteger b) CutBreakdown(BigInteger pos, BigInteger n) => (pos, -1 * n);
+(BigInteger a, BigInteger b) DealBreakdown(BigInteger pos, BigInteger n) => (pos, BigInteger.Zero);
+
+BigInteger NewStack(BigInteger pos) => GoodMod(-1 * pos - 1, deckSize);
+BigInteger Cut(BigInteger pos, BigInteger n) => GoodMod(pos - n, deckSize);
+BigInteger Deal(BigInteger pos, BigInteger n) => GoodMod(pos * n, deckSize);
 
 BigInteger GoodMod(BigInteger i, BigInteger m) => ((i % m) + m) % m;
+
+// https://codeforces.com/blog/entry/72593

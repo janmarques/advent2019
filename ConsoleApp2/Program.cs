@@ -123,10 +123,13 @@ var result = BigInteger.Parse("2020");
 var deckSize = BigInteger.Parse("119315717514047");
 var forward = false;
 
-result = new BigInteger(6526);
+result = new BigInteger(2019);
 deckSize = new BigInteger(10007);
-forward = false;
-//input = smallInput;
+forward = true;
+
+//result = new BigInteger(6526);
+//deckSize = new BigInteger(10007);
+//forward = false;
 
 var input2 = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Reverse();
 if (forward)
@@ -134,24 +137,30 @@ if (forward)
     input2 = input2.Reverse();
 }
 
-foreach (var line in input2)
-{
-    var split = line.Split(' ');
-    var op = split[0];
-    var number = split.Count() == 2 ? BigInteger.Parse(split[1]) : new BigInteger(-1);
 
-    if (op == "newStack")
+for (int i = 0; i < 1; i++)
+{
+
+    foreach (var line in input2)
     {
-        result = forward ? NewStack(result) : NewStackR(result);
+        var split = line.Split(' ');
+        var op = split[0];
+        var number = split.Count() == 2 ? BigInteger.Parse(split[1]) : new BigInteger(-1);
+
+        if (op == "newStack")
+        {
+            result = forward ? NewStack(result) : NewStackR(result);
+        }
+        else if (op == "cut")
+        {
+            result = forward ? Cut(result, number) : CutR(result, number);
+        }
+        else
+        {
+            result = forward ? Deal(result, number) : DealR(result, number);
+        }
     }
-    else if (op == "cut")
-    {
-        result = forward ? Cut(result, number) : CutR(result, number);
-    }
-    else
-    {
-        result = forward ? Deal(result, number) : DealR(result, number);
-    }
+    Console.WriteLine(result);
 }
 
 
@@ -179,6 +188,8 @@ BigInteger DealR(BigInteger pos, BigInteger increment)
 }
 
 
-BigInteger NewStack(BigInteger pos) => (2 * deckSize - 1 - pos) % deckSize;
-BigInteger Cut(BigInteger pos, BigInteger n) => (pos - n + deckSize) % deckSize;
-BigInteger Deal(BigInteger pos, BigInteger n) => (pos * n) % deckSize;
+BigInteger NewStack(BigInteger pos) => GoodMod((-1 * pos - 1), deckSize);
+BigInteger Cut(BigInteger pos, BigInteger n) => GoodMod((pos - n), deckSize);
+BigInteger Deal(BigInteger pos, BigInteger n) => GoodMod((pos * n), deckSize);
+
+BigInteger GoodMod(BigInteger i, BigInteger m) => ((i % m) + m) % m;

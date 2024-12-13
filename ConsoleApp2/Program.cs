@@ -119,80 +119,75 @@ input = fullInput;
 //input = smallest;
 var timer = System.Diagnostics.Stopwatch.StartNew();
 
-
-var input2 = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine);
-
-
-var abs = new List<(BigInteger a, BigInteger b)>();
-foreach (var line in input2)
-{
-    var split = line.Split(' ');
-    var op = split[0];
-    var number = split.Count() == 2 ? BigInteger.Parse(split[1]) : new BigInteger(-1);
-
-    if (op == "newStack")
-    {
-        abs.Add(NewStackBreakdown());
-    }
-    else if (op == "cut")
-    {
-        abs.Add(CutBreakdown(number));
-    }
-    else
-    {
-        abs.Add(DealBreakdown(number));
-    }
-}
+var parsed = input.Replace("deal with increment", "deal").Replace("deal into new stack", "newStack").Split(Environment.NewLine).Select(x => x.Split(' '))
+    .Select(x => (op: x[0], number: BigInteger.Parse(x.ElementAtOrDefault(1) ?? "-1")));
 
 var result = BigInteger.Parse("2020");
 var deckSize = BigInteger.Parse("119315717514047");
 var repeats = BigInteger.Parse("101741582076661");
 
-var state = (abs.First().a, abs.First().b);
-for (int i = 1; i < abs.Count; i++)
+(BigInteger a, BigInteger b) bigFunction = default;
+foreach (var (op, number) in parsed)
 {
-    var ab = abs.ElementAt(i);
-    state = Merge(state, ab);
+    var extraState = op switch
+    {
+        "newStack" => (BigInteger.MinusOne, BigInteger.MinusOne),
+        "cut" => (BigInteger.One, -1 * number),
+        _ => (number, BigInteger.Zero),
+    };
+
+    if (bigFunction == default)
+    {
+        bigFunction = extraState;
+        continue;
+    }
+    bigFunction = Merge(bigFunction, extraState);
 }
 
-//Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
-
-var g = (BigInteger.One, BigInteger.Zero);
-var f = state;
+var repeatedFunction = (BigInteger.One, BigInteger.Zero);
 while (repeats > 0)
 {
     if (!repeats.IsEven)
     {
-        g = Merge(g, f);
+        repeatedFunction = Merge(repeatedFunction, bigFunction);
     }
     repeats /= 2;
-    f = Merge(f, f);
+    bigFunction = Merge(bigFunction, bigFunction);
 }
-state = g;
+bigFunction = repeatedFunction;
 
-Console.WriteLine($"({state.a} * X + {state.b}) mod {deckSize} ≡ {result}");
-Console.WriteLine($"({state.a} * X) mod {deckSize} ≡ ({result} - {state.b} + {deckSize}) mod {deckSize}");
-Console.WriteLine($"{state.a} x ≡ {GoodMod(result - state.b, deckSize)} mod {deckSize}");
+result = GoodMod(GoodMod(result - bigFunction.b, deckSize) * InverseMod(bigFunction.a, deckSize), deckSize);
 
-var search = GoodMod(result - state.b, deckSize);
-Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
+timer.Stop();
+
+Console.WriteLine();
+Console.WriteLine(result); // 79855812422607 correct
+Console.WriteLine(timer.ElapsedMilliseconds + "ms");
+Console.ReadLine();
 
 (BigInteger, BigInteger) Merge((BigInteger, BigInteger) a, (BigInteger, BigInteger) b)
 {
     return (GoodMod(a.Item1 * b.Item1, deckSize), GoodMod(a.Item2 * b.Item1 + b.Item2, deckSize));
 }
 
-timer.Stop();
-
-Console.WriteLine();
-Console.WriteLine(result); // 79855812422607 correect
-Console.WriteLine(timer.ElapsedMilliseconds + "ms");
-Console.ReadLine();
-
-(BigInteger a, BigInteger b) NewStackBreakdown() => (BigInteger.MinusOne, BigInteger.MinusOne);
-(BigInteger a, BigInteger b) CutBreakdown(BigInteger n) => (BigInteger.One, -1 * n);
-(BigInteger a, BigInteger b) DealBreakdown(BigInteger n) => (n, BigInteger.Zero);
-
 BigInteger GoodMod(BigInteger i, BigInteger m) => ((i % m) + m) % m;
 
 // https://codeforces.com/blog/entry/72593
+
+// https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
+BigInteger InverseMod(BigInteger a, BigInteger n)
+{
+    var t = BigInteger.Zero;
+    var newT = BigInteger.One;
+    var r = n;
+    var newR = a;
+    while (newR != 0)
+    {
+        var q = r / newR;
+        (t, newT) = (newT, t - q * newT);
+        (r, newR) = (newR, r - q * newR);
+    }
+    if (r > 1) { throw new Exception(); }
+    if (t < 0) { t += n; }
+    return t;
+}

@@ -1,26 +1,26 @@
-﻿using System;
+﻿//using System;
 
-var fullInput =
-@"";
+//var fullInput =
+//@"";
 
-var smallInput =
-@"";
+//var smallInput =
+//@"";
 
-var smallest = "";
+//var smallest = "";
 
-var input = smallInput;
-//input = fullInput;
-//input = smallest;
-var timer = System.Diagnostics.Stopwatch.StartNew();
+//var input = smallInput;
+////input = fullInput;
+////input = smallest;
+//var timer = System.Diagnostics.Stopwatch.StartNew();
 
-var result = 0l;
+//var result = 0l;
 
-foreach (var line in input.Split(Environment.NewLine))
-{
+//foreach (var line in input.Split(Environment.NewLine))
+//{
 
-}
+//}
 
-timer.Stop();
-Console.WriteLine(result);
-Console.WriteLine(timer.ElapsedMilliseconds + "ms");
-Console.ReadLine();
+//timer.Stop();
+//Console.WriteLine(result);
+//Console.WriteLine(timer.ElapsedMilliseconds + "ms");
+//Console.ReadLine();

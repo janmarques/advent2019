@@ -31,7 +31,7 @@ for (long i = 0; i < array.Length; i++)
 
 var pcCount = 50;
 var pcs = Enumerable.Range(0, pcCount).ToDictionary(x => (long)x, x => new StateMachine { operations = operations.ToDictionary(), Key = x });
-var cache = Enumerable.Range(0, 256).ToDictionary(x => (long)x, x => new Queue<long>(1000000));
+var cache = Enumerable.Range(0, pcCount).Concat(new[] { 255 }).ToDictionary(x => (long)x, x => new Queue<long>(1000000));
 
 int num = 0;
 foreach (var pc in pcs)
@@ -40,13 +40,18 @@ foreach (var pc in pcs)
 }
 
 //for (int i = 0; i < 1000; i++)
+var idleInitCount = 1000;
+var idleCount = idleInitCount;
+var lastIdleY = long.MinValue;
 while (true)
 {
-
+    idleCount--;
     foreach (var pc in pcs.Values)
     {
+
         if (cache[pc.Key].TryDequeue(out var packet))
         {
+            idleCount = idleInitCount;
             pc.inputBuffer.Enqueue(packet);
         }
 
@@ -54,17 +59,32 @@ while (true)
 
         if (pc.outputBuffer.Count == 3)
         {
+            idleCount = idleInitCount;
+
             var id = pc.outputBuffer.Dequeue();
 
             cache[id].Enqueue(pc.outputBuffer.Dequeue());
             cache[id].Enqueue(pc.outputBuffer.Dequeue());
             if (id == 255)
             {
-                result = cache[255].Last();
-                goto end;
+                cache[255] = new Queue<long>(cache[255].TakeLast(2));
+                //goto end;
             }
         }
+    }
+    if (idleCount == 0)
+    {
+        var y = cache[255].Last();
+        if (lastIdleY == y)
+        {
+            result = y;
+            goto end;
+        }
+        lastIdleY = y;
+        var x = cache[255].First();
 
+        cache[0].Enqueue(x);
+        cache[0].Enqueue(y);
     }
 
 }

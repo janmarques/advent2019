@@ -156,29 +156,31 @@ foreach (var line in input2)
     }
 }
 
-BigInteger aNow = abs.First().a;
-BigInteger bNow = abs.First().b;
+var state = (abs.First().a, abs.First().b);
 for (int i = 1; i < abs.Count; i++)
 {
-    var (a, b) = abs.ElementAt(i);
-    aNow = GoodMod(aNow * a, deckSize);
-    bNow = GoodMod(bNow * a + b, deckSize);
+    var ab = abs.ElementAt(i);
+    state = Merge(state, ab);
+
+    //Console.WriteLine($"{i} {}");
+
 }
 
-Console.WriteLine(GoodMod((deckSize - result - bNow) / aNow, deckSize));
+Console.WriteLine(GoodMod(state.a * result + state.b, deckSize));
+//Console.WriteLine(GoodMod((deckSize - result - bNow) / aNow, deckSize));
 
-var g = (BigInteger.One, BigInteger.Zero);
-var f = (aNow, bNow);
-while (repeats > 0)
-{
-    if (!repeats.IsEven)
-    {
+//var g = (BigInteger.One, BigInteger.Zero);
+//var f = (aNow, bNow);
+//while (repeats > 0)
+//{
+//    if (!repeats.IsEven)
+//    {
         
-    }
-    repeats /= 2;
-    aNow = GoodMod(aNow * aNow, deckSize);
-    bNow = GoodMod(bNow * aNow + bNow, deckSize);
-}
+//    }
+//    repeats /= 2;
+//    aNow = GoodMod(aNow * aNow, deckSize);
+//    bNow = GoodMod(bNow * aNow + bNow, deckSize);
+//}
 
 //Console.WriteLine(GoodMod((result - bNow) / aNow, deckSize));
 

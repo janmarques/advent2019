@@ -121,7 +121,7 @@ var timer = System.Diagnostics.Stopwatch.StartNew();
 
 var result = BigInteger.Parse("2020");
 var deckSize = BigInteger.Parse("119315717514047");
-var forward = false;
+var forward = true;
 
 result = new BigInteger(2019);
 deckSize = new BigInteger(10007);
@@ -167,8 +167,20 @@ for (int i = 1; i < abs.Count; i++)
     bNow = GoodMod(bNow * a + b, deckSize);
 }
 
-result = GoodMod(aNow * result + bNow, deckSize);
-Console.WriteLine(result);
+Console.WriteLine(GoodMod(aNow * result + bNow, deckSize));
+
+var times = 3;
+var ak = BigInteger.Pow(aNow, times);
+var xxx = GoodMod(ak * result + ((bNow * (1 - ak) / (1 - aNow))), deckSize);
+Console.WriteLine(xxx);
+
+//2019 start, 3 times, shhould be 3221
+//for (int i = 0; i < 3; i++)
+//{
+
+//    result = GoodMod(aNow * result + bNow, deckSize);
+//    Console.WriteLine(result);
+//}
 
 
 timer.Stop();
